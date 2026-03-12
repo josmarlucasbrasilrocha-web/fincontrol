@@ -405,7 +405,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG — substitua pela sua URL do Google Apps Script
 // ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzQrhInmyecPFbnfHZA1_F86MwPw9MmVhE82xKAdxmaJwqpBzVj4IIwql4REyMqgPKsFw/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbygrEwliWG9nhPoAhTuYROywNz9x_7c0jPlnYT1FcG97CFtr1cpotI7LalFj7WAIFArPw/exec";
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -640,7 +640,7 @@ function renderLancar() {
       ▣ Gasto no Cartão
     </button>
 
-    <div class="section-title">Lançamentos de ${state.mes}</div>
+    <div class="section-title">Lançamentos de ${state.mes} / ${new Date().getFullYear()}</div>
     <div class="card">
       <div class="card-body" style="padding-top:0;padding-bottom:0">
         ${renderTxList(state.lancamentos.filter(l=>l.mes===state.mes))}
@@ -656,16 +656,21 @@ function renderHistorico() {
   const todos = [...state.lancamentos].sort((a,b)=>b.data.localeCompare(a.data));
   if (!todos.length) return `<div class="empty"><div class="empty-icon">📭</div>Nenhum lançamento registrado.<br>Use a aba Lançar para começar.</div>`;
 
-  // Group by month
+  // Group by month+year
   const byMes = {};
-  todos.forEach(l => { if(!byMes[l.mes]) byMes[l.mes]=[]; byMes[l.mes].push(l); });
+  todos.forEach(l => {
+    const ano = l.data ? new Date(l.data + "T12:00:00").getFullYear() : new Date().getFullYear();
+    const key = `${l.mes} / ${ano}`;
+    if(!byMes[key]) byMes[key]=[];
+    byMes[key].push(l);
+  });
 
-  return Object.entries(byMes).map(([mes, items]) => {
+  return Object.entries(byMes).map(([mesAno, items]) => {
     const rec = items.filter(i=>i.tipo==="receita").reduce((s,i)=>s+i.valor,0);
     const des = items.filter(i=>i.tipo==="despesa").reduce((s,i)=>s+i.valor,0);
     return `
       <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>${mes} / 2025</span>
+        <span>${mesAno}</span>
         <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${rec-des>=0?"var(--green)":"var(--red)"}">
           ${fmt(rec-des)}
         </span>
@@ -897,10 +902,12 @@ function salvar() {
 async function sendToSheet(type, data) {
   if (!SHEET_URL) return;
   try {
+    // Remove internal id before sending to Sheets
+    const { id, ...cleanData } = data;
     const params = new URLSearchParams({
       action: "insert",
       type: type,
-      data: JSON.stringify(data)
+      data: JSON.stringify(cleanData)
     });
     await fetch(`${SHEET_URL}?${params.toString()}`, { method: "GET", mode: "no-cors" });
   } catch(e) { console.warn("Sheets offline:", e); }
