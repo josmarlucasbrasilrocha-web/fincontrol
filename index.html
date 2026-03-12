@@ -405,7 +405,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG — substitua pela sua URL do Google Apps Script
 // ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbzDXRH7xAoCeuZf2zQIB3TVrwwAdu7wnxa57vxzgxs1YZundamEDC-ETOcCIb53CScx4A/exec"; // ex: https://script.google.com/macros/s/XXXXX/exec
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzQrhInmyecPFbnfHZA1_F86MwPw9MmVhE82xKAdxmaJwqpBzVj4IIwql4REyMqgPKsFw/exec";
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -897,16 +897,17 @@ function salvar() {
 async function sendToSheet(type, data) {
   if (!SHEET_URL) return;
   try {
-    await fetch(SHEET_URL, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({action:"insert", type, data})
+    const params = new URLSearchParams({
+      action: "insert",
+      type: type,
+      data: JSON.stringify(data)
     });
+    await fetch(`${SHEET_URL}?${params.toString()}`, { method: "GET", mode: "no-cors" });
   } catch(e) { console.warn("Sheets offline:", e); }
 }
 
 async function syncData() {
- if (!SHEET_URL) {
+  if (!SHEET_URL) {
     showStatus("Configure a URL do Google Sheets primeiro","error",3500);
     return;
   }
