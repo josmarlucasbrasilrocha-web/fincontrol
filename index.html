@@ -405,7 +405,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG — substitua pela sua URL do Google Apps Script
 // ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbw6jWXyQnkSq8xBnUBdm61B0jC5rHYNsiRuEZxe15hor7ce_03dPDRZWWpb1wOGc4jvEw/exec"; // ex: https://script.google.com/macros/s/XXXXX/exec
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzDXRH7xAoCeuZf2zQIB3TVrwwAdu7wnxa57vxzgxs1YZundamEDC-ETOcCIb53CScx4A/exec"; // ex: https://script.google.com/macros/s/XXXXX/exec
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -895,7 +895,7 @@ function salvar() {
 // GOOGLE SHEETS INTEGRATION
 // ═══════════════════════════════════════════════════════════════
 async function sendToSheet(type, data) {
-  if (!SHEET_URL || SHEET_URL === "https://script.google.com/macros/s/AKfycbw6jWXyQnkSq8xBnUBdm61B0jC5rHYNsiRuEZxe15hor7ce_03dPDRZWWpb1wOGc4jvEw/exec") return;
+  if (!SHEET_URL) return;
   try {
     await fetch(SHEET_URL, {
       method: "POST",
@@ -906,7 +906,7 @@ async function sendToSheet(type, data) {
 }
 
 async function syncData() {
-  if (!SHEET_URL || SHEET_URL === "https://script.google.com/macros/s/AKfycbw6jWXyQnkSq8xBnUBdm61B0jC5rHYNsiRuEZxe15hor7ce_03dPDRZWWpb1wOGc4jvEw/exec") {
+ if (!SHEET_URL) {
     showStatus("Configure a URL do Google Sheets primeiro","error",3500);
     return;
   }
