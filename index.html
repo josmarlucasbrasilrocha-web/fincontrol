@@ -895,7 +895,7 @@ function salvar() {
 // GOOGLE SHEETS INTEGRATION
 // ═══════════════════════════════════════════════════════════════
 async function sendToSheet(type, data) {
-  if (!SHEET_URL || SHEET_URL === "SUA_URL_AQUI") return;
+  if (!SHEET_URL || SHEET_URL === "https://script.google.com/macros/s/AKfycbw6jWXyQnkSq8xBnUBdm61B0jC5rHYNsiRuEZxe15hor7ce_03dPDRZWWpb1wOGc4jvEw/exec") return;
   try {
     await fetch(SHEET_URL, {
       method: "POST",
@@ -906,7 +906,7 @@ async function sendToSheet(type, data) {
 }
 
 async function syncData() {
-  if (!SHEET_URL || SHEET_URL === "SUA_URL_AQUI") {
+  if (!SHEET_URL || SHEET_URL === "https://script.google.com/macros/s/AKfycbw6jWXyQnkSq8xBnUBdm61B0jC5rHYNsiRuEZxe15hor7ce_03dPDRZWWpb1wOGc4jvEw/exec") {
     showStatus("Configure a URL do Google Sheets primeiro","error",3500);
     return;
   }
