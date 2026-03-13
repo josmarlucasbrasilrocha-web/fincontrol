@@ -606,10 +606,42 @@ async function syncData() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// INIT
+// INIT — limpa localStorage e carrega tudo do Sheets ao abrir
 // ═══════════════════════════════════════════════════════════════
-renderMonthStrip();
-renderContent();
+async function initApp() {
+  // Limpa dados antigos — Sheets é a fonte da verdade
+  localStorage.removeItem("lancamentos");
+  localStorage.removeItem("gastosCartao");
+  state.lancamentos  = [];
+  state.gastosCartao = [];
+
+  renderMonthStrip();
+  renderContent(); // renderiza vazio enquanto carrega
+
+  if (!SHEET_URL) return;
+
+  // Carrega dados do Sheets silenciosamente
+  document.getElementById("syncBtn").innerHTML = '<div class="spinner"></div>';
+  showStatus("⟳ Carregando dados...","loading", 8000);
+
+  try {
+    const res  = await fetch(`${SHEET_URL}?action=getAll`);
+    const json = await res.json();
+
+    if (json.lancamentos)  state.lancamentos  = json.lancamentos;
+    if (json.gastosCartao) state.gastosCartao = json.gastosCartao;
+
+    persist();
+    renderContent();
+    showStatus("✅ Pronto!", "success", 1500);
+  } catch(e) {
+    showStatus("⚠ Sem conexão — app offline","error", 3000);
+  } finally {
+    document.getElementById("syncBtn").textContent = "⟳";
+  }
+}
+
+initApp();
 </script>
 </body>
 </html>
