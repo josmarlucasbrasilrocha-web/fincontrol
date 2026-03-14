@@ -146,7 +146,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbz4-PzUBSLE3iwojeAC8dKYl2b7cUQ1mLpdktoJtSqVDxTXJ_OCj0bqjbKPKt5-vfuETw/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbypUOYTiDICdcxYIq46npgj0LxuoFFU4Ipb2-Cj1eazBjLwRePI0a_8YvbR-zNU6e8mTQ/exec";
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTES
@@ -174,6 +174,19 @@ let state = {
 const fmt   = v => new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v||0);
 const today = () => new Date().toISOString().split("T")[0];
 const uid   = () => Date.now() + Math.random().toString(36).slice(2,7);
+
+// Normaliza qualquer formato de data para "YYYY-MM-DD"
+function normalizeDate(val) {
+  if (!val) return "";
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) return dt.toISOString().split("T")[0];
+  return s;
+}
+function normalizeDates(list) {
+  return list.map(l => ({ ...l, data: normalizeDate(l.data) }));
+}
 
 function persist() {
   localStorage.setItem("lancamentos",  JSON.stringify(state.lancamentos));
@@ -579,19 +592,17 @@ async function syncData() {
 
     // MERGE: combina dados do Sheets com dados locais, sem duplicar
     if (json.lancamentos && json.lancamentos.length > 0) {
-      const localIds  = new Set(state.lancamentos.map(l => `${l.desc}|${l.data}|${l.valor}`));
-      const novosDoSheets = json.lancamentos.filter(l =>
-        !localIds.has(`${l.desc}|${l.data}|${l.valor}`)
-      );
-      state.lancamentos = [...state.lancamentos, ...novosDoSheets];
+      const remotos = normalizeDates(json.lancamentos);
+      const localIds = new Set(state.lancamentos.map(l => `${l.desc}|${l.data}|${l.valor}`));
+      const novos = remotos.filter(l => !localIds.has(`${l.desc}|${l.data}|${l.valor}`));
+      state.lancamentos = [...state.lancamentos, ...novos];
     }
 
     if (json.gastosCartao && json.gastosCartao.length > 0) {
+      const remotos = normalizeDates(json.gastosCartao);
       const localIds = new Set(state.gastosCartao.map(g => `${g.desc}|${g.data}|${g.valor}`));
-      const novosDoSheets = json.gastosCartao.filter(g =>
-        !localIds.has(`${g.desc}|${g.data}|${g.valor}`)
-      );
-      state.gastosCartao = [...state.gastosCartao, ...novosDoSheets];
+      const novos = remotos.filter(g => !localIds.has(`${g.desc}|${g.data}|${g.valor}`));
+      state.gastosCartao = [...state.gastosCartao, ...novos];
     }
 
     persist();
@@ -628,8 +639,8 @@ async function initApp() {
     const res  = await fetch(`${SHEET_URL}?action=getAll`);
     const json = await res.json();
 
-    if (json.lancamentos)  state.lancamentos  = json.lancamentos;
-    if (json.gastosCartao) state.gastosCartao = json.gastosCartao;
+    if (json.lancamentos)  state.lancamentos  = normalizeDates(json.lancamentos);
+    if (json.gastosCartao) state.gastosCartao = normalizeDates(json.gastosCartao);
 
     persist();
     renderContent();
