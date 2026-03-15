@@ -617,36 +617,43 @@ async function syncData() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// INIT — limpa localStorage e carrega tudo do Sheets ao abrir
-// ═══════════════════════════════════════════════════════════════
+// INIT — carrega cache local imediatamente, depois sincroniza com Sheets via merge
 async function initApp() {
-  // Limpa dados antigos — Sheets é a fonte da verdade
-  localStorage.removeItem("lancamentos");
-  localStorage.removeItem("gastosCartao");
-  state.lancamentos  = [];
-  state.gastosCartao = [];
-
+  // Mostra dados do cache local imediatamente (sem limpar)
+  // Isso evita tela vazia e evita perder dados inseridos durante o carregamento
   renderMonthStrip();
-  renderContent(); // renderiza vazio enquanto carrega
+  renderContent();
 
   if (!SHEET_URL) return;
 
-  // Carrega dados do Sheets silenciosamente
+  // Busca dados do Sheets em background
   document.getElementById("syncBtn").innerHTML = '<div class="spinner"></div>';
-  showStatus("⟳ Carregando dados...","loading", 8000);
+  showStatus("⟳ Sincronizando...", "loading", 10000);
 
   try {
     const res  = await fetch(`${SHEET_URL}?action=getAll`);
     const json = await res.json();
 
-    if (json.lancamentos)  state.lancamentos  = normalizeDates(json.lancamentos);
-    if (json.gastosCartao) state.gastosCartao = normalizeDates(json.gastosCartao);
+    // MERGE: traz do Sheets o que não está no local, sem sobrescrever
+    if (json.lancamentos && json.lancamentos.length > 0) {
+      const remotos  = normalizeDates(json.lancamentos);
+      const localIds = new Set(state.lancamentos.map(l => `${l.desc}|${l.data}|${l.valor}`));
+      const novos    = remotos.filter(l => !localIds.has(`${l.desc}|${l.data}|${l.valor}`));
+      state.lancamentos = [...state.lancamentos, ...novos];
+    }
+
+    if (json.gastosCartao && json.gastosCartao.length > 0) {
+      const remotos  = normalizeDates(json.gastosCartao);
+      const localIds = new Set(state.gastosCartao.map(g => `${g.desc}|${g.data}|${g.valor}`));
+      const novos    = remotos.filter(g => !localIds.has(`${g.desc}|${g.data}|${g.valor}`));
+      state.gastosCartao = [...state.gastosCartao, ...novos];
+    }
 
     persist();
     renderContent();
     showStatus("✅ Pronto!", "success", 1500);
   } catch(e) {
-    showStatus("⚠ Sem conexão — app offline","error", 3000);
+    showStatus("⚠ Sem conexão — dados locais", "error", 3000);
   } finally {
     document.getElementById("syncBtn").textContent = "⟳";
   }
