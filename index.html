@@ -146,7 +146,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbz55MR5disXJQbHFR83dq1u8HRkchAva4RBMQAxIP-BUy953kMJeW2JTbxTxm0maD8kLA/exec";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbyydqhXELNLiLAVXEaho1c28hAPvdv0wxvy5fH6FjIHXzd0wQ6-pwf_tCHnre28PmDjPA/exec";
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTES
@@ -617,10 +617,20 @@ async function syncData() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// INIT — carrega cache local imediatamente, depois sincroniza com Sheets via merge
+// INIT — marcador de versao + carrega cache + sincroniza com Sheets via merge
 async function initApp() {
-  // Mostra dados do cache local imediatamente (sem limpar)
-  // Isso evita tela vazia e evita perder dados inseridos durante o carregamento
+  // Marcador de versao: se a URL do Sheets mudou, limpa o cache automaticamente
+  // Evita dados de planilha antiga aparecendo em planilha nova
+  const savedURL = localStorage.getItem("sheetURL");
+  if (savedURL !== SHEET_URL) {
+    localStorage.removeItem("lancamentos");
+    localStorage.removeItem("gastosCartao");
+    state.lancamentos  = [];
+    state.gastosCartao = [];
+    localStorage.setItem("sheetURL", SHEET_URL);
+  }
+
+  // Mostra dados do cache local imediatamente
   renderMonthStrip();
   renderContent();
 
