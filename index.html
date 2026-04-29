@@ -2,674 +2,606 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinControl">
-<meta name="theme-color" content="#0F172A">
-<title>FinControl – Josmar Brasil</title>
+<meta name="theme-color" content="#111827">
+<title>FinControl v20</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0F172A;--bg2:#1E293B;--bg3:#334155;--border:#1E293B;
-    --text:#F1F5F9;--text2:#94A3B8;--text3:#475569;
-    --green:#10B981;--green-bg:#052E16;--red:#F87171;--red-bg:#2D0A0A;
-    --blue:#60A5FA;--blue-bg:#0D1F3C;--purple:#A78BFA;--purple-bg:#1A0D3D;
-    --amber:#FBBF24;--card-r:16px;--transition:.22s cubic-bezier(.4,0,.2,1);
+    --bg:#F3F4F6;--surface:#FFFFFF;--surface2:#F9FAFB;--line:#E5E7EB;
+    --text:#111827;--muted:#6B7280;--soft:#9CA3AF;
+    --green:#059669;--green-bg:#ECFDF5;--red:#DC2626;--red-bg:#FEF2F2;
+    --blue:#2563EB;--blue-bg:#EFF6FF;--violet:#7C3AED;--violet-bg:#F5F3FF;
+    --amber:#D97706;--amber-bg:#FFFBEB;--shadow:0 10px 28px rgba(17,24,39,.08);
   }
-  [data-theme="light"] {
-    --bg:#F8FAFC;--bg2:#FFFFFF;--bg3:#E2E8F0;--border:#E2E8F0;
-    --text:#0F172A;--text2:#475569;--text3:#94A3B8;
-    --green-bg:#ECFDF5;--red-bg:#FEF2F2;--blue-bg:#EFF6FF;--purple-bg:#F5F3FF;
+  [data-theme="dark"] {
+    --bg:#111827;--surface:#1F2937;--surface2:#273244;--line:#374151;
+    --text:#F9FAFB;--muted:#CBD5E1;--soft:#94A3B8;
+    --green-bg:#052E23;--red-bg:#3B0A0A;--blue-bg:#102A56;--violet-bg:#261347;--amber-bg:#392700;
+    --shadow:0 12px 34px rgba(0,0,0,.24);
   }
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
-  #app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
-  .header{flex-shrink:0;padding:14px 20px 10px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:10}
-  .header-left{display:flex;flex-direction:column}
-  .header-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
-  .header-title{font-size:18px;font-weight:800;color:var(--text);margin-top:1px}
-  .header-actions{display:flex;gap:8px;align-items:center}
-  .icon-btn{width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition)}
-  .icon-btn:active{transform:scale(.92)}
-  .month-strip{flex-shrink:0;display:flex;gap:6px;padding:10px 20px;overflow-x:auto;scrollbar-width:none;background:var(--bg);border-bottom:1px solid var(--border)}
-  .month-strip::-webkit-scrollbar{display:none}
-  .month-pill{padding:5px 14px;border-radius:20px;border:none;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;background:var(--bg2);color:var(--text3);transition:var(--transition)}
-  .month-pill.active{background:var(--blue);color:#fff;box-shadow:0 2px 12px rgba(96,165,250,.35)}
-  .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 20px;scrollbar-width:none}
-  .content::-webkit-scrollbar{display:none}
-  .bottom-nav{flex-shrink:0;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
-  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0 8px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-family:'Sora',sans-serif;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;gap:4px;transition:var(--transition)}
-  .nav-item.active{color:var(--blue)}
-  .nav-icon{font-size:20px;line-height:1}
-  .card{background:var(--bg2);border-radius:var(--card-r);border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
-  .card-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-  .card-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2)}
-  .card-body{padding:14px 16px}
-  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-  .kpi{background:var(--bg2);border-radius:var(--card-r);border:1px solid var(--border);padding:14px 16px;transition:var(--transition)}
-  .kpi.wide{grid-column:span 2;display:flex;justify-content:space-between;align-items:center}
-  .kpi-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-  .kpi.wide .kpi-label{margin-bottom:0}
-  .kpi-value{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600}
-  .kpi.wide .kpi-value{font-size:22px}
-  .progress-wrap{margin-bottom:12px}
-  .progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px}
-  .progress-track{height:7px;background:var(--bg3);border-radius:99px;overflow:hidden}
-  .progress-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
-  .cat-item{margin-bottom:12px}
-  .cat-item:last-child{margin-bottom:0}
-  .cat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-  .cat-name{font-size:13px;color:var(--text);font-weight:600}
-  .cat-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--red);font-weight:600}
-  .cat-bar{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden}
-  .cat-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .5s ease}
-  .tx-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-  .tx-item:last-child{border-bottom:none;padding-bottom:0}
-  .tx-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-  .tx-info{flex:1;min-width:0}
-  .tx-desc{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .tx-meta{font-size:11px;color:var(--text3);margin-top:2px}
-  .tx-amount{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;flex-shrink:0}
-  .btn-row{display:flex;gap:10px;margin-bottom:14px}
-  .btn{flex:1;padding:14px 10px;border-radius:14px;border:none;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
-  .btn:active{transform:scale(.96)}
-  .btn-green{background:var(--green-bg);color:var(--green);border:1.5px solid var(--green)}
-  .btn-red{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red)}
-  .btn-purple{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple)}
-  .btn-primary{width:100%;padding:16px;border-radius:14px;border:none;font-family:'Sora',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:var(--transition);margin-top:8px;color:#fff}
-  .btn-primary:active{transform:scale(.97)}
-  .btn-primary.green{background:linear-gradient(135deg,#059669,#10B981)}
-  .btn-primary.red{background:linear-gradient(135deg,#DC2626,#EF4444)}
-  .btn-primary.purple{background:linear-gradient(135deg,#7C3AED,#A78BFA)}
-  .form-group{margin-bottom:12px}
-  .form-label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
-  .form-input,.form-select{width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;font-size:15px;outline:none;transition:var(--transition);-webkit-appearance:none;appearance:none}
-  .form-input:focus,.form-select:focus{border-color:var(--blue)}
-  .form-row{display:flex;gap:10px}
-  .form-row .form-group{flex:1}
-  .parcela-preview{text-align:center;padding:12px;background:var(--blue-bg);border-radius:12px;color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;margin-top:-4px;margin-bottom:12px;border:1px solid rgba(96,165,250,.2)}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;z-index:100;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .25s}
-  .modal-overlay.open{opacity:1;pointer-events:all}
-  .modal{background:var(--bg2);border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:20px 20px calc(20px + env(safe-area-inset-bottom));border:1px solid var(--border);border-bottom:none;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
-  .modal-overlay.open .modal{transform:translateY(0)}
-  .modal-handle{width:40px;height:4px;background:var(--bg3);border-radius:99px;margin:0 auto 18px}
-  .modal-title{font-size:18px;font-weight:800;margin-bottom:20px}
-  .status-bar{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
-  .status-bar.show{opacity:1}
-  .status-bar.success{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
-  .status-bar.error{background:var(--red-bg);color:var(--red);border:1px solid var(--red)}
-  .status-bar.loading{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue)}
-  .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;line-height:1.6}
-  .empty-icon{font-size:40px;margin-bottom:12px}
-  .section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;padding:0 2px}
-  .card-group-header{padding:12px 16px;background:linear-gradient(90deg,var(--purple-bg),var(--bg2));display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
-  .card-group-name{font-size:14px;font-weight:700;color:var(--purple)}
-  .card-group-total{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--text)}
-  .spinner{width:20px;height:20px;border:2px solid var(--bg3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Sora,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font:inherit}
+  button{cursor:pointer}
+  #app{height:100vh;height:100dvh;max-width:520px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
+  .status{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:50;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);font-size:13px;font-weight:700;color:var(--text);opacity:0;pointer-events:none;transition:.2s}
+  .status.show{opacity:1}
+  .status.success{border-color:rgba(5,150,105,.35);color:var(--green);background:var(--green-bg)}
+  .status.error{border-color:rgba(220,38,38,.35);color:var(--red);background:var(--red-bg)}
+  .status.loading{border-color:rgba(37,99,235,.35);color:var(--blue);background:var(--blue-bg)}
+  .topbar{flex:0 0 auto;padding:14px 16px 10px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .eyebrow{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--soft);font-weight:800}
+  .title{font-size:20px;font-weight:800;margin-top:2px}
+  .actions{display:flex;gap:8px}
+  .icon-btn{width:38px;height:38px;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:8px;display:grid;place-items:center;font-size:17px}
+  .months{flex:0 0 auto;display:flex;gap:6px;padding:10px 16px;overflow:auto;border-bottom:1px solid var(--line);background:var(--surface);scrollbar-width:none}
+  .months::-webkit-scrollbar{display:none}
+  .month{border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800;min-width:44px}
+  .month.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .content{flex:1;overflow:auto;padding:14px 14px 18px}
+  .nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
+  .nav button{border:0;background:transparent;color:var(--soft);padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+  .nav button.active{color:var(--blue)}
+  .nav .ico{font-size:18px;line-height:1}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .card,.kpi,.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+  .kpi{padding:13px}
+  .kpi.wide{grid-column:1/-1;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.9px;color:var(--soft)}
+  .value{font-family:"JetBrains Mono",monospace;font-size:18px;font-weight:700;margin-top:5px}
+  .wide .value{font-size:22px}
+  .panel{padding:13px;margin-bottom:12px}
+  .panel-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .quick button,.primary,.secondary,.danger{border:1px solid transparent;border-radius:8px;padding:13px 12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
+  .primary{width:100%;background:var(--blue);color:#fff}
+  .secondary{background:var(--surface2);border-color:var(--line);color:var(--text)}
+  .danger{background:var(--red-bg);border-color:rgba(220,38,38,.25);color:var(--red)}
+  .green{background:var(--green-bg);color:var(--green);border-color:rgba(5,150,105,.25)!important}
+  .red{background:var(--red-bg);color:var(--red);border-color:rgba(220,38,38,.25)!important}
+  .violet{background:var(--violet-bg);color:var(--violet);border-color:rgba(124,58,237,.25)!important}
+  .blue{background:var(--blue-bg);color:var(--blue);border-color:rgba(37,99,235,.25)!important}
+  .amber{background:var(--amber-bg);color:var(--amber);border-color:rgba(217,119,6,.25)!important}
+  .bar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:8px}
+  .bar span{display:block;height:100%;border-radius:99px;background:var(--green)}
+  .list{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+  .item{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .bubble{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;font-weight:900}
+  .info{min-width:0;flex:1}
+  .desc{font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .amount{font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:800;text-align:right;white-space:nowrap}
+  .row-actions{display:flex;gap:6px;margin-left:2px}
+  .mini{width:32px;height:32px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--muted);font-weight:800}
+  .empty{padding:30px 18px;text-align:center;color:var(--muted);line-height:1.5;font-size:14px}
+  .filters{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}
+  .chips{display:flex;gap:6px;overflow:auto;margin-bottom:10px;scrollbar-width:none}
+  .chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:800;white-space:nowrap}
+  .chip.active{background:var(--blue-bg);border-color:rgba(37,99,235,.28);color:var(--blue)}
+  .form{display:grid;gap:11px}
+  .field label{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--soft);margin-bottom:6px}
+  .input,.select,.textarea{width:100%;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:8px;padding:12px;outline:none}
+  .textarea{min-height:84px;resize:vertical}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal-layer{position:fixed;inset:0;background:rgba(17,24,39,.62);z-index:40;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.2s}
+  .modal-layer.open{opacity:1;pointer-events:auto}
+  .modal{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--surface);border-radius:8px 8px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));border:1px solid var(--line);box-shadow:var(--shadow);transform:translateY(100%);transition:.24s}
+  .modal-layer.open .modal{transform:translateY(0)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .modal-title{font-size:18px;font-weight:900}
+  .close{width:36px;height:36px;border:1px solid var(--line);background:var(--surface2);border-radius:8px}
+  .spinner{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  *{scrollbar-width:thin;scrollbar-color:var(--bg3) transparent}
+  @media (max-width:360px){.content{padding:10px}.value{font-size:16px}.wide .value{font-size:19px}.quick{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.amount{font-size:12px}}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="status-bar" id="statusBar"></div>
-  <div class="header">
-    <div class="header-left">
-      <span class="header-label">Controle Financeiro</span>
-      <span class="header-title" id="headerTitle">Dashboard</span>
+  <div class="status" id="status"></div>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">FinControl v20</div>
+      <div class="title" id="title">Dashboard</div>
     </div>
-    <div class="header-actions">
+    <div class="actions">
       <button class="icon-btn" id="syncBtn" title="Sincronizar" onclick="syncData()">⟳</button>
-      <button class="icon-btn" id="themeBtn" title="Alternar tema" onclick="toggleTheme()">◐</button>
+      <button class="icon-btn" id="themeBtn" title="Tema" onclick="toggleTheme()">◐</button>
     </div>
-  </div>
-  <div class="month-strip" id="monthStrip"></div>
-  <div class="content" id="content"></div>
-  <nav class="bottom-nav">
-    <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')"><span class="nav-icon">◉</span>Dashboard</button>
-    <button class="nav-item" id="nav-lancar" onclick="navigate('lancar')"><span class="nav-icon">＋</span>Lançar</button>
-    <button class="nav-item" id="nav-historico" onclick="navigate('historico')"><span class="nav-icon">☰</span>Histórico</button>
-    <button class="nav-item" id="nav-cartoes" onclick="navigate('cartoes')"><span class="nav-icon">▣</span>Cartões</button>
+  </header>
+  <div class="months" id="months"></div>
+  <main class="content" id="content"></main>
+  <nav class="nav" id="nav">
+    <button class="active" data-tab="dashboard" onclick="navigate('dashboard')"><span class="ico">◉</span>Início</button>
+    <button data-tab="lancar" onclick="navigate('lancar')"><span class="ico">＋</span>Lançar</button>
+    <button data-tab="historico" onclick="navigate('historico')"><span class="ico">☰</span>Histórico</button>
+    <button data-tab="cartoes" onclick="navigate('cartoes')"><span class="ico">▣</span>Cartões</button>
+    <button data-tab="config" onclick="navigate('config')"><span class="ico">⚙</span>Config</button>
   </nav>
 </div>
-<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
-  <div class="modal" id="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="modalTitle"></div>
+<div class="modal-layer" id="modalLayer" onclick="closeModalOutside(event)">
+  <section class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
     <div id="modalBody"></div>
-  </div>
+  </section>
 </div>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════════════
-const SHEET_URL = "https://script.google.com/macros/s/AKfycbyjC1YkAh5y5PjbKTChCSiJPtaEpp-h22YU4FSWupEAu1jy7pd-o_v0zZjO5DKiJF0oug/exec";
-
-// ═══════════════════════════════════════════════════════════════
-// CONSTANTES
-// ═══════════════════════════════════════════════════════════════
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbyjC1YkAh5y5PjbKTChCSiJPtaEpp-h22YU4FSWupEAu1jy7pd-o_v0zZjO5DKiJF0oug/exec";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-const CATS_DESPESA = ["Moradia","Alimentação","Transporte","Saúde","Educação","Lazer","Vestuário","Assinaturas","Pet","Presentes","Outros"];
-const CATS_RECEITA = ["Salário","Freelance","Investimentos","Aluguel Recebido","Bônus","Outros"];
-const CARTOES = Array.from({length:10},(_,i)=>`Cartão ${i+1}`);
-
-// ═══════════════════════════════════════════════════════════════
-// STATE — sem seed data, começa sempre limpo
-// ═══════════════════════════════════════════════════════════════
+const DEFAULT_CONFIG = {
+  appVersion: "20.0",
+  anoAtivo: new Date().getFullYear(),
+  categoriasReceita: ["Salário","Freelance","Investimentos","Aluguel Recebido","Bônus","Outros"],
+  categoriasDespesa: ["Moradia","Alimentação","Transporte","Saúde","Educação","Lazer","Vestuário","Assinaturas","Pet","Presentes","Outros"],
+  cartoesAtivos: Array.from({ length: 10 }, (_, i) => `Cartão ${i + 1}`),
+  tokenInstalacao: ""
+};
+const titles = { dashboard:"Dashboard", lancar:"Lançar", historico:"Histórico", cartoes:"Cartões", config:"Configuração" };
+const store = {
+  get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
+  set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
+  del(key) { localStorage.removeItem(key); }
+};
 let state = {
   tab: "dashboard",
   mes: MESES[new Date().getMonth()],
-  theme: localStorage.getItem("theme") || "dark",
-  lancamentos:  JSON.parse(localStorage.getItem("lancamentos")  || "[]"),
-  gastosCartao: JSON.parse(localStorage.getItem("gastosCartao") || "[]"),
-  syncing: false,
+  theme: localStorage.getItem("theme") || "light",
+  lancamentos: store.get("lancamentos", []),
+  gastosCartao: store.get("gastosCartao", []),
+  config: { ...DEFAULT_CONFIG, ...store.get("config", {}) },
+  settings: { sheetUrl: localStorage.getItem("sheetUrl") || DEFAULT_SHEET_URL, token: localStorage.getItem("installToken") || "" },
+  cartoesResumo: store.get("cartoesResumo", []),
+  historyFilter: "todos",
+  query: "",
+  syncing: false
 };
+let modalMode = null;
+let editing = null;
 
-// ═══════════════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════════════
-const fmt   = v => new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v||0);
-const today = () => new Date().toISOString().split("T")[0];
-const uid   = () => Date.now() + Math.random().toString(36).slice(2,7);
-
-// Normaliza qualquer formato de data para "YYYY-MM-DD"
-function normalizeDate(val) {
-  if (!val) return "";
-  const s = String(val).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const dt = new Date(s);
-  if (!isNaN(dt.getTime())) return dt.toISOString().split("T")[0];
-  return s;
-}
-function normalizeDates(list) {
-  return list.map(l => ({ ...l, data: normalizeDate(l.data) }));
-}
+const fmt = value => new Intl.NumberFormat("pt-BR", { style:"currency", currency:"BRL" }).format(Number(value) || 0);
+const today = () => new Date().toISOString().slice(0, 10);
+const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[ch]));
+const moneyNumber = value => Number(String(value || "0").replace(/\./g, "").replace(",", ".")) || 0;
+const monthFromDate = value => MESES[(new Date((value || today()) + "T12:00:00")).getMonth()];
+const yearFromDate = value => (new Date((value || today()) + "T12:00:00")).getFullYear();
 
 function persist() {
-  localStorage.setItem("lancamentos",  JSON.stringify(state.lancamentos));
-  localStorage.setItem("gastosCartao", JSON.stringify(state.gastosCartao));
+  store.set("lancamentos", state.lancamentos);
+  store.set("gastosCartao", state.gastosCartao);
+  store.set("config", state.config);
+  store.set("cartoesResumo", state.cartoesResumo);
 }
-
-function showStatus(msg, type="success", dur=2500) {
-  const el = document.getElementById("statusBar");
-  el.textContent = msg;
-  el.className = `status-bar show ${type}`;
-  setTimeout(() => el.className = "status-bar", dur);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// THEME
-// ═══════════════════════════════════════════════════════════════
-function toggleTheme() {
-  state.theme = state.theme === "dark" ? "light" : "dark";
-  applyTheme();
-  localStorage.setItem("theme", state.theme);
+function showStatus(message, type = "success", duration = 2400) {
+  const el = document.getElementById("status");
+  el.textContent = message;
+  el.className = `status show ${type}`;
+  clearTimeout(showStatus.timer);
+  showStatus.timer = setTimeout(() => el.className = "status", duration);
 }
 function applyTheme() {
-  document.documentElement.setAttribute("data-theme", state.theme === "light" ? "light" : "");
+  document.documentElement.dataset.theme = state.theme === "dark" ? "dark" : "";
   document.getElementById("themeBtn").textContent = state.theme === "dark" ? "☀" : "◐";
 }
-applyTheme();
-
-// ═══════════════════════════════════════════════════════════════
-// MONTH STRIP
-// ═══════════════════════════════════════════════════════════════
-function renderMonthStrip() {
-  const strip = document.getElementById("monthStrip");
-  strip.innerHTML = MESES.map(m =>
-    `<button class="month-pill ${m===state.mes?"active":""}" onclick="selectMes('${m}')">${m}</button>`
-  ).join("");
-  setTimeout(() => {
-    const active = strip.querySelector(".active");
-    if (active) active.scrollIntoView({inline:"center",behavior:"smooth"});
-  }, 50);
+function toggleTheme() {
+  state.theme = state.theme === "dark" ? "light" : "dark";
+  localStorage.setItem("theme", state.theme);
+  applyTheme();
 }
-function selectMes(m) {
-  state.mes = m;
-  renderMonthStrip();
+
+function renderMonths() {
+  const el = document.getElementById("months");
+  el.innerHTML = MESES.map(m => `<button class="month ${m === state.mes ? "active" : ""}" onclick="selectMes('${m}')">${m}</button>`).join("");
+  setTimeout(() => el.querySelector(".active")?.scrollIntoView({ inline:"center", behavior:"smooth" }), 50);
+}
+function selectMes(mes) {
+  state.mes = mes;
+  renderMonths();
   renderContent();
 }
-
-// ═══════════════════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════════════════
-const titles = {dashboard:"Dashboard",lancar:"Lançar",historico:"Histórico",cartoes:"Cartões"};
 function navigate(tab) {
   state.tab = tab;
-  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-  document.getElementById(`nav-${tab}`).classList.add("active");
-  document.getElementById("headerTitle").textContent = titles[tab];
+  document.querySelectorAll("#nav button").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tab));
+  document.getElementById("title").textContent = titles[tab];
   renderContent();
 }
-
-// ═══════════════════════════════════════════════════════════════
-// RENDER ROUTER
-// ═══════════════════════════════════════════════════════════════
 function renderContent() {
-  const el = document.getElementById("content");
-  if      (state.tab === "dashboard")  el.innerHTML = renderDashboard();
-  else if (state.tab === "lancar")     el.innerHTML = renderLancar();
-  else if (state.tab === "historico")  el.innerHTML = renderHistorico();
-  else if (state.tab === "cartoes")    el.innerHTML = renderCartoes();
+  const views = { dashboard: renderDashboard, lancar: renderLancar, historico: renderHistorico, cartoes: renderCartoes, config: renderConfig };
+  document.getElementById("content").innerHTML = views[state.tab]();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════════════════════════
+function lancMes(mes = state.mes) {
+  return state.lancamentos.filter(item => item.mes === mes && yearFromDate(item.data) === Number(state.config.anoAtivo));
+}
+function totalsForMonth(mes = state.mes) {
+  const list = lancMes(mes);
+  const receitas = list.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
+  const despesas = list.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
+  return { receitas, despesas, saldo: receitas - despesas };
+}
 function renderDashboard() {
-  const mes = state.mes;
-  const lancMes  = state.lancamentos.filter(l => l.mes === mes);
-  const receitas = lancMes.filter(l=>l.tipo==="receita").reduce((s,l)=>s+l.valor,0);
-  const despesas = lancMes.filter(l=>l.tipo==="despesa").reduce((s,l)=>s+l.valor,0);
-  const saldo    = receitas - despesas;
-  const pct      = receitas > 0 ? Math.min(100, Math.round((despesas/receitas)*100)) : 0;
-  const cartaoMes = state.gastosCartao
-    .filter(g => MESES[new Date(g.data+"T12:00:00").getMonth()] === mes)
-    .reduce((s,g)=>s+g.valor,0);
-
-  const catBreakdown = CATS_DESPESA.map(cat => ({
-    cat, val: lancMes.filter(l=>l.tipo==="despesa"&&l.cat===cat).reduce((s,l)=>s+l.valor,0)
-  })).filter(c=>c.val>0).sort((a,b)=>b.val-a.val);
-  const maxCat = Math.max(...catBreakdown.map(c=>c.val), 1);
-
-  const recentes = [...state.lancamentos].sort((a,b)=>b.data.localeCompare(a.data)).slice(0,5);
-  const saldoColor = saldo >= 0 ? "var(--blue)" : "var(--red)";
-  const barColor = pct > 85
-    ? "linear-gradient(90deg,var(--red),#F87171)"
-    : "linear-gradient(90deg,var(--green),#34D399)";
-
+  const { receitas, despesas, saldo } = totalsForMonth();
+  const comprometido = receitas > 0 ? Math.min(100, Math.round((despesas / receitas) * 100)) : 0;
+  const recentes = allHistory().slice(0, 5);
+  const cats = categoryBreakdown();
   return `
-    <div class="kpi-grid">
-      <div class="kpi" style="border-color:rgba(16,185,129,.2);background:var(--green-bg)">
-        <div class="kpi-label">Receitas</div>
-        <div class="kpi-value" style="color:var(--green)">${fmt(receitas)}</div>
-      </div>
-      <div class="kpi" style="border-color:rgba(248,113,113,.2);background:var(--red-bg)">
-        <div class="kpi-label">Despesas</div>
-        <div class="kpi-value" style="color:var(--red)">${fmt(despesas)}</div>
-      </div>
-      <div class="kpi wide" style="border-color:rgba(96,165,250,.2);background:var(--blue-bg)">
-        <div><div class="kpi-label">Saldo ${mes}</div><div class="kpi-value" style="color:${saldoColor}">${fmt(saldo)}</div></div>
-        <div style="text-align:right"><div class="kpi-label">Cartão</div><div class="kpi-value" style="color:var(--purple)">${fmt(cartaoMes)}</div></div>
+    <div class="quick">
+      <button class="green" onclick="openEntry('receita')">↑ Receita</button>
+      <button class="red" onclick="openEntry('despesa')">↓ Despesa</button>
+    </div>
+    <div class="grid">
+      ${kpi("Receitas", fmt(receitas), "var(--green)")}
+      ${kpi("Despesas", fmt(despesas), "var(--red)")}
+      <div class="kpi wide">
+        <div><div class="label">Saldo ${esc(state.mes)}</div><div class="value" style="color:${saldo >= 0 ? "var(--blue)" : "var(--red)"}">${fmt(saldo)}</div></div>
+        <div style="text-align:right"><div class="label">Comprometido</div><div class="value" style="color:${comprometido > 85 ? "var(--red)" : "var(--green)"}">${comprometido}%</div></div>
       </div>
     </div>
-    ${receitas > 0 ? `
-    <div class="card progress-wrap" style="padding:14px 16px;margin-bottom:12px">
-      <div class="progress-label">
-        <span>Comprometido da receita</span>
-        <span style="color:${pct>85?"var(--red)":"var(--green)"}">${pct}%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" style="width:${pct}%;background:${barColor}"></div>
-      </div>
-    </div>` : ""}
-    ${catBreakdown.length ? `
-    <div class="card">
-      <div class="card-header"><span class="card-title">Top categorias</span></div>
-      <div class="card-body">
-        ${catBreakdown.slice(0,5).map(c=>`
-          <div class="cat-item">
-            <div class="cat-row"><span class="cat-name">${c.cat}</span><span class="cat-val">${fmt(c.val)}</span></div>
-            <div class="cat-bar"><div class="cat-fill" style="width:${Math.round((c.val/maxCat)*100)}%"></div></div>
-          </div>`).join("")}
-      </div>
-    </div>` : ""}
-    <div class="card">
-      <div class="card-header">
-        <span class="card-title">Últimos lançamentos</span>
-        <span style="font-size:11px;color:var(--blue);cursor:pointer;font-weight:600" onclick="navigate('historico')">Ver todos →</span>
-      </div>
-      <div class="card-body" style="padding-top:0;padding-bottom:0">
-        ${recentes.length ? recentes.map(l=>`
-          <div class="tx-item">
-            <div class="tx-icon" style="background:${l.tipo==="receita"?"var(--green-bg)":"var(--red-bg)"}">${l.tipo==="receita"?"↑":"↓"}</div>
-            <div class="tx-info">
-              <div class="tx-desc">${l.desc}</div>
-              <div class="tx-meta">${l.cat} · ${l.mes} · ${l.data}</div>
-            </div>
-            <div class="tx-amount" style="color:${l.tipo==="receita"?"var(--green)":"var(--red)"}">
-              ${l.tipo==="receita"?"+":"-"}${fmt(l.valor)}
-            </div>
-          </div>`).join("")
-        : `<div class="empty"><div class="empty-icon">📭</div>Nenhum lançamento ainda.<br>Use a aba Lançar para começar.</div>`}
-      </div>
+    <div class="panel">
+      <div class="panel-title"><span>Saúde do mês</span><span>${esc(state.config.anoAtivo)}</span></div>
+      <div class="bar"><span style="width:${comprometido}%;background:${comprometido > 85 ? "var(--red)" : "var(--green)"}"></span></div>
+      <div class="meta" style="margin-top:8px">${receitas ? "Meta prática: manter despesas abaixo de 85% da receita." : "Lance uma receita para medir comprometimento."}</div>
+    </div>
+    ${cats.length ? `<div class="panel"><div class="panel-title">Top categorias</div>${cats.map(catRow).join("")}</div>` : ""}
+    <div class="panel">
+      <div class="panel-title"><span>Últimos movimentos</span><button class="chip" onclick="navigate('historico')">Ver todos</button></div>
+      ${recentes.length ? `<div class="list">${recentes.map(itemRow).join("")}</div>` : empty("Nenhum lançamento ainda.")}
     </div>`;
 }
+function kpi(label, value, color) {
+  return `<div class="kpi"><div class="label">${esc(label)}</div><div class="value" style="color:${color}">${esc(value)}</div></div>`;
+}
+function categoryBreakdown() {
+  const list = lancMes().filter(l => l.tipo === "despesa");
+  const totals = {};
+  list.forEach(l => totals[l.cat || "Outros"] = (totals[l.cat || "Outros"] || 0) + Number(l.valor || 0));
+  const max = Math.max(...Object.values(totals), 1);
+  return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([cat, value]) => ({ cat, value, pct: Math.round(value / max * 100) }));
+}
+function catRow(row) {
+  return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;gap:10px"><strong style="font-size:13px">${esc(row.cat)}</strong><span class="amount" style="color:var(--red)">${fmt(row.value)}</span></div><div class="bar"><span style="width:${row.pct}%;background:var(--violet)"></span></div></div>`;
+}
 
-// ═══════════════════════════════════════════════════════════════
-// LANÇAR
-// ═══════════════════════════════════════════════════════════════
 function renderLancar() {
+  const list = lancMes();
   return `
-    <div class="btn-row">
-      <button class="btn btn-green" onclick="openModal('receita')">↑ Receita</button>
-      <button class="btn btn-red"   onclick="openModal('despesa')">↓ Despesa</button>
+    <div class="quick">
+      <button class="green" onclick="openEntry('receita')">↑ Nova receita</button>
+      <button class="red" onclick="openEntry('despesa')">↓ Nova despesa</button>
     </div>
-    <button class="btn btn-purple" style="width:100%;margin-bottom:14px" onclick="openModal('cartao')">▣ Gasto no Cartão</button>
-    <div class="section-title">Lançamentos de ${state.mes} / ${new Date().getFullYear()}</div>
-    <div class="card">
-      <div class="card-body" style="padding-top:0;padding-bottom:0">
-        ${renderTxList(state.lancamentos.filter(l=>l.mes===state.mes))}
+    <button class="primary violet" onclick="openEntry('cartao')" style="margin-bottom:12px">▣ Gasto no cartão</button>
+    <div class="panel">
+      <div class="panel-title"><span>${esc(state.mes)} / ${esc(state.config.anoAtivo)}</span><span>${list.length} itens</span></div>
+      ${list.length ? `<div class="list">${list.map(itemRow).join("")}</div>` : empty("Nenhum movimento neste mês.")}
+    </div>`;
+}
+
+function renderHistorico() {
+  const items = filteredHistory();
+  return `
+    <div class="filters">
+      <input class="input" value="${esc(state.query)}" placeholder="Buscar descrição, categoria ou cartão" oninput="state.query=this.value;renderContent()">
+      <button class="secondary" onclick="state.query='';renderContent()">Limpar</button>
+    </div>
+    <div class="chips">
+      ${["todos","receita","despesa","cartao"].map(f => `<button class="chip ${state.historyFilter === f ? "active" : ""}" onclick="state.historyFilter='${f}';renderContent()">${f === "todos" ? "Todos" : f[0].toUpperCase() + f.slice(1)}</button>`).join("")}
+    </div>
+    ${items.length ? `<div class="list">${items.map(itemRow).join("")}</div>` : empty("Nada encontrado para o filtro atual.")}`;
+}
+function allHistory() {
+  const lanc = state.lancamentos.map(item => ({ ...item, kind:"lancamento" }));
+  const cards = state.gastosCartao.map(item => ({ ...item, kind:"cartao", tipo:"cartao" }));
+  return [...lanc, ...cards].sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+}
+function filteredHistory() {
+  const q = state.query.trim().toLowerCase();
+  return allHistory().filter(item => {
+    const passType = state.historyFilter === "todos" || item.tipo === state.historyFilter;
+    const hay = [item.desc, item.cat, item.cartao, item.data, item.mes].join(" ").toLowerCase();
+    return passType && (!q || hay.includes(q));
+  });
+}
+function itemRow(item) {
+  const isCard = item.tipo === "cartao";
+  const isReceita = item.tipo === "receita";
+  const colorClass = isCard ? "violet" : isReceita ? "green" : "red";
+  const signal = isCard ? "▣" : isReceita ? "↑" : "↓";
+  const signed = isReceita ? "+" : "-";
+  const meta = isCard
+    ? `${item.cartao || "Cartão"} · ${item.cat || "Outros"} · ${item.parcelas || 1}x · ${item.data || ""}`
+    : `${item.cat || "Sem categoria"} · ${item.mes || monthFromDate(item.data)} · ${item.data || ""}`;
+  return `<div class="item">
+    <div class="bubble ${colorClass}">${signal}</div>
+    <div class="info"><div class="desc">${esc(item.desc)}</div><div class="meta">${esc(meta)}</div></div>
+    <div>
+      <div class="amount" style="color:var(--${isCard ? "violet" : isReceita ? "green" : "red"})">${isCard ? "" : signed}${fmt(item.valor)}</div>
+      <div class="row-actions">
+        <button class="mini" title="Editar" onclick="editItem('${esc(item.tipo)}','${esc(item.id)}')">✎</button>
+        <button class="mini" title="Excluir" onclick="deleteItem('${esc(item.tipo)}','${esc(item.id)}')">×</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderCartoes() {
+  const cards = state.config.cartoesAtivos || DEFAULT_CONFIG.cartoesAtivos;
+  const monthIndex = MESES.indexOf(state.mes);
+  return `
+    <button class="primary violet" onclick="openEntry('cartao')" style="margin-bottom:12px">▣ Novo gasto no cartão</button>
+    ${cards.map(name => {
+      const resumo = state.cartoesResumo.find(c => normalizeCard(c.nome) === normalizeCard(name)) || {};
+      const gastos = state.gastosCartao.filter(g => normalizeCard(g.cartao) === normalizeCard(name));
+      const comprasMes = gastos.filter(g => monthFromDate(g.data) === state.mes).reduce((s, g) => s + Number(g.valor || 0), 0);
+      const limite = Number(resumo.limite || 0);
+      const fatura = Number(resumo.faturaAtual || comprasMes);
+      const disponivel = limite ? Number(resumo.disponivel || (limite - fatura)) : 0;
+      const usado = limite ? Math.min(100, Math.round(fatura / limite * 100)) : 0;
+      const vencimento = Number(resumo.vencimento || 0);
+      const alert = vencimento && daysUntilDue(vencimento, monthIndex) <= 5 ? `<span class="chip active">Vence em ${daysUntilDue(vencimento, monthIndex)} dias</span>` : "";
+      return `<div class="panel">
+        <div class="panel-title"><span>${esc(name)}</span>${alert || `<span>${gastos.length} compras</span>`}</div>
+        <div class="grid">
+          ${kpi("Fatura", fmt(fatura), "var(--violet)")}
+          ${kpi("Disponível", limite ? fmt(disponivel) : "Definir limite", limite && disponivel < 0 ? "var(--red)" : "var(--green)")}
+        </div>
+        ${limite ? `<div class="bar"><span style="width:${usado}%;background:${usado > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta" style="margin-top:7px">${usado}% do limite usado · fechamento dia ${resumo.fechamento || "-"}</div>` : `<div class="meta">Limite e vencimento vêm da aba do cartão/Config no Sheets.</div>`}
+        ${gastos.length ? `<div class="list" style="margin-top:12px">${gastos.slice(0, 4).map(itemRow).join("")}</div>` : ""}
+      </div>`;
+    }).join("")}`;
+}
+function normalizeCard(name) {
+  return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+function daysUntilDue(day) {
+  const now = new Date();
+  const due = new Date(now.getFullYear(), now.getMonth(), day, 12);
+  if (due < now) due.setMonth(due.getMonth() + 1);
+  return Math.max(0, Math.ceil((due - now) / 86400000));
+}
+
+function renderConfig() {
+  return `
+    <div class="panel">
+      <div class="panel-title">Instalação</div>
+      <div class="form">
+        <div class="field"><label>URL do Apps Script</label><input class="input" id="cfg-url" value="${esc(state.settings.sheetUrl)}"></div>
+        <div class="field"><label>Token de instalação</label><input class="input" id="cfg-token" value="${esc(state.settings.token)}" placeholder="Opcional"></div>
+        <div class="form-row">
+          <button class="secondary" onclick="saveLocalSettings()">Salvar local</button>
+          <button class="primary" onclick="syncData()">Sincronizar</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Cadastros do Sheets</div>
+      <div class="form">
+        <div class="field"><label>Ano ativo</label><input class="input" id="cfg-year" type="number" value="${esc(state.config.anoAtivo)}"></div>
+        <div class="field"><label>Categorias de receita</label><textarea class="textarea" id="cfg-rec">${esc((state.config.categoriasReceita || []).join(", "))}</textarea></div>
+        <div class="field"><label>Categorias de despesa</label><textarea class="textarea" id="cfg-desp">${esc((state.config.categoriasDespesa || []).join(", "))}</textarea></div>
+        <div class="field"><label>Cartões ativos</label><textarea class="textarea" id="cfg-cards">${esc((state.config.cartoesAtivos || []).join(", "))}</textarea></div>
+        <button class="primary" onclick="saveRemoteConfig()">Salvar cadastros</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Manutenção</div>
+      <div class="form-row">
+        <button class="secondary" onclick="exportLocalData()">Exportar JSON</button>
+        <button class="danger" onclick="clearCache()">Limpar cache</button>
       </div>
     </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HISTÓRICO
-// ═══════════════════════════════════════════════════════════════
-function renderHistorico() {
-  const todos = [...state.lancamentos].sort((a,b)=>b.data.localeCompare(a.data));
-  if (!todos.length) return `<div class="empty"><div class="empty-icon">📭</div>Nenhum lançamento registrado.<br>Use a aba Lançar para começar.</div>`;
-  const byMes = {};
-  todos.forEach(l => {
-    const ano = l.data ? new Date(l.data+"T12:00:00").getFullYear() : new Date().getFullYear();
-    const key = `${l.mes} / ${ano}`;
-    if (!byMes[key]) byMes[key] = [];
-    byMes[key].push(l);
-  });
-  return Object.entries(byMes).map(([mesAno, items]) => {
-    const rec = items.filter(i=>i.tipo==="receita").reduce((s,i)=>s+i.valor,0);
-    const des = items.filter(i=>i.tipo==="despesa").reduce((s,i)=>s+i.valor,0);
-    return `
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
-        <span>${mesAno}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:${rec-des>=0?"var(--green)":"var(--red)"}">${fmt(rec-des)}</span>
-      </div>
-      <div class="card">
-        <div class="card-body" style="padding-top:0;padding-bottom:0">${renderTxList(items)}</div>
-      </div>`;
-  }).join("");
+function openEntry(type, item = null) {
+  modalMode = type;
+  editing = item;
+  const isEdit = Boolean(item);
+  document.getElementById("modalTitle").textContent = `${isEdit ? "Editar" : "Novo"} ${type === "cartao" ? "gasto no cartão" : type}`;
+  document.getElementById("modalBody").innerHTML = entryForm(type, item);
+  document.getElementById("modalLayer").classList.add("open");
 }
-
-function renderTxList(items) {
-  if (!items.length) return `<div class="empty" style="padding:24px"><div class="empty-icon">📭</div>Nenhum lançamento neste mês</div>`;
-  return items.map(l=>`
-    <div class="tx-item">
-      <div class="tx-icon" style="background:${l.tipo==="receita"?"var(--green-bg)":"var(--red-bg)"}">${l.tipo==="receita"?"↑":"↓"}</div>
-      <div class="tx-info">
-        <div class="tx-desc">${l.desc}</div>
-        <div class="tx-meta">${l.cat} · ${l.data}</div>
-      </div>
-      <div class="tx-amount" style="color:${l.tipo==="receita"?"var(--green)":"var(--red)"}">
-        ${l.tipo==="receita"?"+":"-"}${fmt(l.valor)}
-      </div>
-    </div>`).join("");
-}
-
-// ═══════════════════════════════════════════════════════════════
-// CARTÕES
-// ═══════════════════════════════════════════════════════════════
-function renderCartoes() {
-  const cartoesUsados = CARTOES.filter(c => state.gastosCartao.some(g=>g.cartao===c));
-  const totalGeral = state.gastosCartao.reduce((s,g)=>s+g.valor,0);
-  return `
-    <button class="btn btn-purple" style="width:100%;margin-bottom:14px" onclick="openModal('cartao')">▣ Novo Gasto no Cartão</button>
-    ${cartoesUsados.length === 0
-      ? `<div class="empty"><div class="empty-icon">💳</div>Nenhum gasto de cartão registrado.</div>`
-      : `<div class="kpi wide" style="margin-bottom:12px;background:var(--purple-bg);border-color:rgba(167,139,250,.2)">
-           <div><div class="kpi-label">Total em Cartões</div></div>
-           <div class="kpi-value" style="color:var(--purple)">${fmt(totalGeral)}</div>
-         </div>
-         ${cartoesUsados.map(cartao => {
-           const gastos = state.gastosCartao.filter(g=>g.cartao===cartao);
-           const total  = gastos.reduce((s,g)=>s+g.valor,0);
-           return `
-             <div class="card" style="margin-bottom:12px">
-               <div class="card-group-header">
-                 <span class="card-group-name">▣ ${cartao}</span>
-                 <span class="card-group-total">${fmt(total)}</span>
-               </div>
-               ${gastos.map((g,i,arr)=>`
-                 <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;${i<arr.length-1?"border-bottom:1px solid var(--border)":""}">
-                   <div>
-                     <div style="font-size:13px;font-weight:600;color:var(--text)">${g.desc}</div>
-                     <div style="font-size:11px;color:var(--text3);margin-top:2px">${g.cat} · ${g.parcelas}x · ${g.data}</div>
-                   </div>
-                   <div style="text-align:right">
-                     <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--purple)">${fmt(g.valor)}</div>
-                     ${g.parcelas>1?`<div style="font-size:11px;color:var(--text3)">${fmt(g.valor/g.parcelas)}/mês</div>`:""}
-                   </div>
-                 </div>`).join("")}
-             </div>`;
-         }).join("")}`
-    }`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MODAL
-// ═══════════════════════════════════════════════════════════════
-let currentModal = null;
-function openModal(type) {
-  currentModal = type;
-  const colors  = {receita:"var(--green)",despesa:"var(--red)",cartao:"var(--purple)"};
-  const labels  = {receita:"↑ Nova Receita",despesa:"↓ Nova Despesa",cartao:"▣ Gasto no Cartão"};
-  const btnClass= {receita:"green",despesa:"red",cartao:"purple"};
-  const title   = document.getElementById("modalTitle");
-  title.style.color = colors[type];
-  title.textContent = labels[type];
-  document.getElementById("modalBody").innerHTML = buildForm(type, btnClass[type]);
-  document.getElementById("modalOverlay").classList.add("open");
-  setTimeout(() => document.getElementById("modalBody").querySelector("input,select")?.focus(), 350);
-}
-
-function buildForm(type, btnClass) {
-  const mesOptions = MESES.map(m=>`<option value="${m}" ${m===state.mes?"selected":""}>${m}</option>`).join("");
-  const catDespOpts= CATS_DESPESA.map(c=>`<option value="${c}">${c}</option>`).join("");
-  const catRecOpts = CATS_RECEITA.map(c=>`<option value="${c}">${c}</option>`).join("");
-  const cartaoOpts = CARTOES.map(c=>`<option value="${c}">${c}</option>`).join("");
-
+function entryForm(type, item = {}) {
+  const catList = type === "receita" ? state.config.categoriasReceita : state.config.categoriasDespesa;
+  const catOptions = (catList || []).map(cat => `<option ${cat === item.cat ? "selected" : ""}>${esc(cat)}</option>`).join("");
+  const cardOptions = (state.config.cartoesAtivos || []).map(card => `<option ${card === item.cartao ? "selected" : ""}>${esc(card)}</option>`).join("");
+  const mes = item.mes || monthFromDate(item.data || today());
+  const mesOptions = MESES.map(m => `<option value="${m}" ${m === mes ? "selected" : ""}>${m}</option>`).join("");
   if (type === "cartao") return `
-    <div class="form-group">
-      <label class="form-label">Cartão</label>
-      <select class="form-select" id="f-cartao"><option value="">Selecione...</option>${cartaoOpts}</select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Descrição</label>
-      <input class="form-input" id="f-desc" placeholder="Ex: iFood, Amazon, Posto Shell...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Categoria</label>
-      <select class="form-select" id="f-cat"><option value="">Selecione...</option>${catDespOpts}</select>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Valor Total (R$)</label>
-        <input class="form-input" id="f-valor" type="number" placeholder="0,00" inputmode="decimal" oninput="updateParcela()">
+    <div class="form">
+      <div class="field"><label>Cartão</label><select class="select" id="f-cartao">${cardOptions}</select></div>
+      <div class="field"><label>Descrição</label><input class="input" id="f-desc" value="${esc(item.desc || "")}" placeholder="Ex: mercado, farmácia, assinatura"></div>
+      <div class="field"><label>Categoria</label><select class="select" id="f-cat">${catOptions}</select></div>
+      <div class="form-row">
+        <div class="field"><label>Valor total</label><input class="input" id="f-valor" type="number" step="0.01" inputmode="decimal" value="${esc(item.valor || "")}" oninput="updateInstallmentPreview()"></div>
+        <div class="field"><label>Parcelas</label><input class="input" id="f-parcelas" type="number" min="1" max="48" value="${esc(item.parcelas || 1)}" oninput="updateInstallmentPreview()"></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Parcelas</label>
-        <input class="form-input" id="f-parcelas" type="number" value="1" min="1" max="48" oninput="updateParcela()">
-      </div>
-    </div>
-    <div class="parcela-preview" id="parcelaPreview">1x sem juros</div>
-    <div class="form-group">
-      <label class="form-label">Data</label>
-      <input class="form-input" id="f-data" type="date" value="${today()}">
-    </div>
-    <button class="btn-primary ${btnClass}" onclick="salvar()">Registrar Gasto</button>`;
-
+      <div class="panel blue" id="installmentPreview" style="box-shadow:none;margin:0">${installmentText(item.valor, item.parcelas || 1)}</div>
+      <div class="field"><label>Data</label><input class="input" id="f-data" type="date" value="${esc(item.data || today())}"></div>
+      <button class="primary violet" onclick="saveEntry()">Salvar</button>
+    </div>`;
   return `
-    <div class="form-group">
-      <label class="form-label">Descrição</label>
-      <input class="form-input" id="f-desc" placeholder="${type==="receita"?"Ex: Salário, Freelance...":"Ex: Supermercado, Farmácia..."}">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Categoria</label>
-      <select class="form-select" id="f-cat"><option value="">Selecione...</option>${type==="receita"?catRecOpts:catDespOpts}</select>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Valor (R$)</label>
-        <input class="form-input" id="f-valor" type="number" placeholder="0,00" inputmode="decimal">
+    <div class="form">
+      <div class="field"><label>Descrição</label><input class="input" id="f-desc" value="${esc(item.desc || "")}" placeholder="${type === "receita" ? "Ex: salário, freelance" : "Ex: supermercado, aluguel"}"></div>
+      <div class="field"><label>Categoria</label><select class="select" id="f-cat">${catOptions}</select></div>
+      <div class="form-row">
+        <div class="field"><label>Valor</label><input class="input" id="f-valor" type="number" step="0.01" inputmode="decimal" value="${esc(item.valor || "")}"></div>
+        <div class="field"><label>Mês</label><select class="select" id="f-mes">${mesOptions}</select></div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Mês</label>
-        <select class="form-select" id="f-mes">${mesOptions}</select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Data</label>
-      <input class="form-input" id="f-data" type="date" value="${today()}">
-    </div>
-    <button class="btn-primary ${btnClass}" onclick="salvar()">${type==="receita"?"Lançar Receita":"Lançar Despesa"}</button>`;
+      <div class="field"><label>Data</label><input class="input" id="f-data" type="date" value="${esc(item.data || today())}" onchange="document.getElementById('f-mes').value=monthFromDate(this.value)"></div>
+      <button class="primary ${type === "receita" ? "green" : "red"}" onclick="saveEntry()">Salvar</button>
+    </div>`;
 }
-
-function updateParcela() {
-  const valor    = parseFloat(document.getElementById("f-valor")?.value||0);
-  const parcelas = parseInt(document.getElementById("f-parcelas")?.value||1);
-  const el = document.getElementById("parcelaPreview");
-  if (!el) return;
-  el.textContent = valor && parcelas > 0
-    ? parcelas === 1 ? `${fmt(valor)} à vista` : `${parcelas}x de ${fmt(valor/parcelas)} sem juros`
-    : "1x sem juros";
+function installmentText(valor, parcelas) {
+  const v = moneyNumber(valor);
+  const p = Math.max(Number(parcelas) || 1, 1);
+  return v ? (p === 1 ? `${fmt(v)} à vista` : `${p}x de ${fmt(v / p)}`) : "Informe valor e parcelas.";
 }
-
+function updateInstallmentPreview() {
+  document.getElementById("installmentPreview").textContent = installmentText(document.getElementById("f-valor").value, document.getElementById("f-parcelas").value);
+}
 function closeModal() {
-  document.getElementById("modalOverlay").classList.remove("open");
-  currentModal = null;
+  document.getElementById("modalLayer").classList.remove("open");
+  modalMode = null;
+  editing = null;
 }
-function closeModalOutside(e) {
-  if (e.target === document.getElementById("modalOverlay")) closeModal();
+function closeModalOutside(event) {
+  if (event.target.id === "modalLayer") closeModal();
 }
-
-function salvar() {
-  const desc    = document.getElementById("f-desc")?.value.trim();
-  const cat     = document.getElementById("f-cat")?.value;
-  const valor   = parseFloat(document.getElementById("f-valor")?.value);
-  const data    = document.getElementById("f-data")?.value;
-  const mes     = document.getElementById("f-mes")?.value || MESES[new Date(data+"T12:00:00").getMonth()];
-  const cartao  = document.getElementById("f-cartao")?.value;
-  const parcelas= parseInt(document.getElementById("f-parcelas")?.value||1);
-
-  if (!desc || !valor || isNaN(valor)) return showStatus("⚠ Preencha descrição e valor","error");
-
-  if (currentModal === "cartao") {
-    if (!cartao) return showStatus("⚠ Selecione o cartão","error");
-    const novo = {id:uid(),cartao,desc,cat:cat||"Outros",valor,parcelas,data};
-    state.gastosCartao.unshift(novo);
-    sendToSheet("cartao", novo);
+async function saveEntry() {
+  const data = {
+    id: editing?.id || uid(modalMode === "cartao" ? "car" : "lan"),
+    desc: document.getElementById("f-desc").value.trim(),
+    cat: document.getElementById("f-cat").value,
+    valor: moneyNumber(document.getElementById("f-valor").value),
+    data: document.getElementById("f-data").value || today()
+  };
+  if (!data.desc || !data.valor) return showStatus("Preencha descrição e valor.", "error");
+  const action = editing ? "update" : "insert";
+  if (modalMode === "cartao") {
+    data.cartao = document.getElementById("f-cartao").value;
+    data.parcelas = Number(document.getElementById("f-parcelas").value) || 1;
+    upsertLocal("gastosCartao", data);
   } else {
-    if (!cat) return showStatus("⚠ Selecione a categoria","error");
-    const novo = {id:uid(),tipo:currentModal,cat,desc,valor,data,mes};
-    state.lancamentos.unshift(novo);
-    sendToSheet("lancamento", novo);
+    data.tipo = modalMode;
+    data.mes = document.getElementById("f-mes").value || monthFromDate(data.data);
+    data.ano = yearFromDate(data.data);
+    upsertLocal("lancamentos", data);
   }
-
   persist();
   closeModal();
-  showStatus("✅ Salvo com sucesso!");
   renderContent();
+  const result = await apiRequest(action, { type: modalMode === "cartao" ? "cartao" : "lancamento", data });
+  showStatus(result.status === "ok" ? "Salvo e sincronizado." : "Salvo localmente. Revise a sincronização.", result.status === "ok" ? "success" : "error", 3400);
+}
+function upsertLocal(key, item) {
+  const list = state[key].filter(current => current.id !== item.id);
+  state[key] = [item, ...list];
+}
+function editItem(type, id) {
+  const source = type === "cartao" ? state.gastosCartao : state.lancamentos;
+  const item = source.find(i => i.id === id);
+  if (item) openEntry(type, item);
+}
+async function deleteItem(type, id) {
+  if (!confirm("Excluir este lançamento?")) return;
+  if (type === "cartao") state.gastosCartao = state.gastosCartao.filter(i => i.id !== id);
+  else state.lancamentos = state.lancamentos.filter(i => i.id !== id);
+  persist();
+  renderContent();
+  const result = await apiRequest("delete", { type: type === "cartao" ? "cartao" : "lancamento", id });
+  showStatus(result.status === "ok" ? "Excluído." : "Excluído localmente. Revise a sincronização.", result.status === "ok" ? "success" : "error", 3200);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// GOOGLE SHEETS — ENVIO
-// ═══════════════════════════════════════════════════════════════
-async function sendToSheet(type, data) {
-  if (!SHEET_URL) return;
+async function apiRequest(action, payload = {}) {
+  const url = (state.settings.sheetUrl || "").trim();
+  if (!url) return { status:"local", message:"URL não configurada." };
+  const body = { action, token: state.settings.token || "", ...payload };
   try {
-    const { id, ...cleanData } = data;
-    const params = new URLSearchParams({ action:"insert", type, data: JSON.stringify(cleanData) });
-    await fetch(`${SHEET_URL}?${params.toString()}`, { method:"GET", mode:"no-cors" });
-  } catch(e) { console.warn("Sheets offline:", e); }
+    const res = await fetch(url, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    if (["insert","update","delete"].includes(action)) {
+      try {
+        const params = new URLSearchParams();
+        Object.entries(body).forEach(([key, value]) => params.set(key, typeof value === "object" ? JSON.stringify(value) : value));
+        await fetch(`${url}?${params.toString()}`, { method:"GET", mode:"no-cors" });
+        return { status:"ok", fallback:true };
+      } catch (fallbackErr) {
+        return { status:"error", message:String(fallbackErr) };
+      }
+    }
+    return { status:"error", message:String(err) };
+  }
 }
-
-// ═══════════════════════════════════════════════════════════════
-// GOOGLE SHEETS — SYNC COM MERGE (não sobrescreve dados locais)
-// ═══════════════════════════════════════════════════════════════
 async function syncData() {
-  if (!SHEET_URL) { showStatus("Configure a URL do Google Sheets","error",3500); return; }
   if (state.syncing) return;
   state.syncing = true;
-  document.getElementById("syncBtn").innerHTML = '<div class="spinner"></div>';
-  showStatus("⟳ Sincronizando...","loading",5000);
-
-  try {
-    const res  = await fetch(`${SHEET_URL}?action=getAll`);
-    const json = await res.json();
-
-    // MERGE: combina dados do Sheets com dados locais, sem duplicar
-    if (json.lancamentos && json.lancamentos.length > 0) {
-      const remotos = normalizeDates(json.lancamentos);
-      const localIds = new Set(state.lancamentos.map(l => `${l.desc}|${l.data}|${l.valor}`));
-      const novos = remotos.filter(l => !localIds.has(`${l.desc}|${l.data}|${l.valor}`));
-      state.lancamentos = [...state.lancamentos, ...novos];
-    }
-
-    if (json.gastosCartao && json.gastosCartao.length > 0) {
-      const remotos = normalizeDates(json.gastosCartao);
-      const localIds = new Set(state.gastosCartao.map(g => `${g.desc}|${g.data}|${g.valor}`));
-      const novos = remotos.filter(g => !localIds.has(`${g.desc}|${g.data}|${g.valor}`));
-      state.gastosCartao = [...state.gastosCartao, ...novos];
-    }
-
-    persist();
-    renderContent();
-    showStatus("✅ Dados sincronizados!");
-  } catch(e) {
-    showStatus("❌ Erro ao sincronizar","error");
-  } finally {
-    state.syncing = false;
-    document.getElementById("syncBtn").textContent = "⟳";
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INIT — marcador de versao + carrega cache + sincroniza com Sheets via merge
-async function initApp() {
-  // Marcador de versao: se a URL do Sheets mudou, limpa o cache automaticamente
-  // Evita dados de planilha antiga aparecendo em planilha nova
-  const savedURL = localStorage.getItem("sheetURL");
-  if (savedURL !== SHEET_URL) {
-    localStorage.removeItem("lancamentos");
-    localStorage.removeItem("gastosCartao");
-    state.lancamentos  = [];
-    state.gastosCartao = [];
-    localStorage.setItem("sheetURL", SHEET_URL);
-  }
-
-  // Mostra dados do cache local imediatamente
-  renderMonthStrip();
+  document.getElementById("syncBtn").innerHTML = '<span class="spinner"></span>';
+  showStatus("Sincronizando...", "loading", 7000);
+  const json = await apiRequest("getAll");
+  state.syncing = false;
+  document.getElementById("syncBtn").textContent = "⟳";
+  if (json.status !== "ok") return showStatus(json.message || "Não foi possível sincronizar.", "error", 4200);
+  state.config = { ...state.config, ...json.config };
+  state.lancamentos = mergeById(state.lancamentos, (json.lancamentos || []).map(normalizeItem));
+  state.gastosCartao = mergeById(state.gastosCartao, (json.gastosCartao || []).map(normalizeItem));
+  state.cartoesResumo = json.cartoesResumo || [];
+  persist();
+  renderMonths();
   renderContent();
-
-  if (!SHEET_URL) return;
-
-  // Busca dados do Sheets em background
-  document.getElementById("syncBtn").innerHTML = '<div class="spinner"></div>';
-  showStatus("⟳ Sincronizando...", "loading", 10000);
-
-  try {
-    const res  = await fetch(`${SHEET_URL}?action=getAll`);
-    const json = await res.json();
-
-    // MERGE: traz do Sheets o que não está no local, sem sobrescrever
-    if (json.lancamentos && json.lancamentos.length > 0) {
-      const remotos  = normalizeDates(json.lancamentos);
-      const localIds = new Set(state.lancamentos.map(l => `${l.desc}|${l.data}|${l.valor}`));
-      const novos    = remotos.filter(l => !localIds.has(`${l.desc}|${l.data}|${l.valor}`));
-      state.lancamentos = [...state.lancamentos, ...novos];
-    }
-
-    if (json.gastosCartao && json.gastosCartao.length > 0) {
-      const remotos  = normalizeDates(json.gastosCartao);
-      const localIds = new Set(state.gastosCartao.map(g => `${g.desc}|${g.data}|${g.valor}`));
-      const novos    = remotos.filter(g => !localIds.has(`${g.desc}|${g.data}|${g.valor}`));
-      state.gastosCartao = [...state.gastosCartao, ...novos];
-    }
-
-    persist();
-    renderContent();
-    showStatus("✅ Pronto!", "success", 1500);
-  } catch(e) {
-    showStatus("⚠ Sem conexão — dados locais", "error", 3000);
-  } finally {
-    document.getElementById("syncBtn").textContent = "⟳";
-  }
+  showStatus("Dados sincronizados.", "success");
+}
+function mergeById(local, remote) {
+  const map = new Map();
+  [...local, ...remote].forEach(item => item.id && map.set(item.id, item));
+  return [...map.values()].sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+}
+function normalizeItem(item) {
+  return { ...item, valor:Number(item.valor || 0), data:String(item.data || ""), mes:item.mes || monthFromDate(item.data) };
+}
+function saveLocalSettings() {
+  state.settings.sheetUrl = document.getElementById("cfg-url").value.trim();
+  state.settings.token = document.getElementById("cfg-token").value.trim();
+  localStorage.setItem("sheetUrl", state.settings.sheetUrl);
+  localStorage.setItem("installToken", state.settings.token);
+  showStatus("Configuração local salva.");
+}
+async function saveRemoteConfig() {
+  saveLocalSettings();
+  const config = {
+    anoAtivo: Number(document.getElementById("cfg-year").value) || new Date().getFullYear(),
+    categoriasReceita: splitTextarea("cfg-rec"),
+    categoriasDespesa: splitTextarea("cfg-desp"),
+    cartoesAtivos: splitTextarea("cfg-cards"),
+    tokenInstalacao: state.settings.token
+  };
+  state.config = { ...state.config, ...config };
+  persist();
+  renderContent();
+  const result = await apiRequest("saveConfig", { config });
+  showStatus(result.status === "ok" ? "Cadastros salvos no Sheets." : "Cadastros salvos localmente.", result.status === "ok" ? "success" : "error", 3600);
+}
+function splitTextarea(id) {
+  return document.getElementById(id).value.split(",").map(v => v.trim()).filter(Boolean);
+}
+function clearCache() {
+  if (!confirm("Limpar dados locais deste aparelho?")) return;
+  ["lancamentos","gastosCartao","cartoesResumo","config"].forEach(key => store.del(key));
+  state.lancamentos = [];
+  state.gastosCartao = [];
+  state.cartoesResumo = [];
+  state.config = { ...DEFAULT_CONFIG };
+  persist();
+  renderContent();
+  showStatus("Cache local limpo.");
+}
+function exportLocalData() {
+  const blob = new Blob([JSON.stringify({ lancamentos:state.lancamentos, gastosCartao:state.gastosCartao, config:state.config }, null, 2)], { type:"application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `fincontrol-backup-${today()}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+function empty(text) {
+  return `<div class="empty">${esc(text)}</div>`;
 }
 
-initApp();
+async function init() {
+  applyTheme();
+  renderMonths();
+  renderContent();
+  if (state.settings.sheetUrl) await syncData();
+}
+init();
 </script>
 </body>
 </html>
