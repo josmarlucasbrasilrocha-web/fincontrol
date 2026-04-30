@@ -174,7 +174,7 @@
 <script>
 const APP_VERSION = "20.2";
 const APP_BUILD_DATE = "2026-04-30";
-const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwXGgs0XpO6LJLqYiaSyv8MNOauvpcCuSyRZcbEVkstyH8cgeUyu8PG0SsmoTZChocNIg/exec";
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbxxrnpqJenbmC7Emf3kKSdYOsVlzY1ldl_wxrWy-0BgMkVnNy6conUV3KLeW5IwoEenrw/exec";
 const APP_STORAGE_VERSION = "20.2";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
@@ -211,6 +211,7 @@ let state = {
   lastSync: localStorage.getItem("lastSync") || "",
   remoteVersion: localStorage.getItem("remoteVersion") || "",
   remoteBuildDate: localStorage.getItem("remoteBuildDate") || "",
+  remoteSheetVersion: localStorage.getItem("remoteSheetVersion") || "",
   cartoesResumo: store.get("cartoesResumo", []),
   historyFilter: "todos",
   query: "",
@@ -542,12 +543,27 @@ function renderSetupChecklist() {
     </div>`).join("")}</div>
   </div>`;
 }
+function getCompatibility() {
+  if (!state.remoteVersion && !state.remoteSheetVersion) {
+    return { status:"pending", text:"Versões serão verificadas na próxima sincronização." };
+  }
+  const scriptVersion = state.remoteVersion || "";
+  const sheetVersion = state.remoteSheetVersion || state.config.sheetSchemaVersion || "";
+  const ok = scriptVersion === APP_VERSION && sheetVersion === APP_VERSION;
+  if (ok) return { status:"ok", text:`Versões conferidas: App, Script e Planilha v${APP_VERSION}.` };
+  return {
+    status:"warn",
+    text:`App v${APP_VERSION}, Script ${scriptVersion ? "v" + scriptVersion : "não sincronizado"}, Planilha ${sheetVersion ? "v" + sheetVersion : "não sincronizada"}.`
+  };
+}
 function renderConnectionStatus() {
   const connected = Boolean((state.settings.sheetUrl || "").trim());
+  const compat = getCompatibility();
   return `<div class="panel">
     <div class="panel-title"><span>Conexão</span><span class="chip ${connected ? "active" : ""}">${connected ? "Conectado" : "Pendente"}</span></div>
     <div class="meta">${connected ? "Sua planilha está configurada como fonte da verdade." : "Configure a URL do Apps Script para sincronizar."}</div>
     <div class="meta" style="margin-top:6px">Última sincronização: ${state.lastSync ? esc(state.lastSync) : "ainda não registrada"}</div>
+    <div class="meta" style="margin-top:6px">${esc(compat.text)}</div>
     <button class="primary" style="margin-top:12px" onclick="syncData()">Testar conexão</button>
   </div>`;
 }
@@ -569,7 +585,7 @@ function renderConfig() {
       <summary>Avançado</summary>
       <div class="advanced-body">
         <div class="form">
-          <div class="meta">Versão: App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Build ${APP_BUILD_DATE}</div>
+          <div class="meta">Versão: App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Planilha ${state.remoteSheetVersion ? `v${esc(state.remoteSheetVersion)}` : "não sincronizada"} · Build ${APP_BUILD_DATE}</div>
           <div class="field"><label>URL do Apps Script</label><input class="input" id="cfg-url" value="${esc(state.settings.sheetUrl)}"></div>
           <div class="field"><label>Token de instalação</label><input class="input" id="cfg-token" value="${esc(state.settings.token)}" placeholder="Opcional"></div>
           <div class="form-row">
@@ -584,6 +600,7 @@ function renderConfig() {
 
 function renderMais() {
   const total = allHistory().length;
+  const compat = getCompatibility();
   return `
     <div class="panel">
       <div class="panel-title">Ações rápidas</div>
@@ -596,7 +613,8 @@ function renderMais() {
     <div class="panel">
       <div class="panel-title"><span>Resumo do app</span><span>${total} movimentos</span></div>
       <div class="meta">Fonte da verdade: Google Sheets. O app sincroniza ao abrir e depois de salvar.</div>
-      <div class="meta" style="margin-top:6px">App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Build ${APP_BUILD_DATE}</div>
+      <div class="meta" style="margin-top:6px">App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Planilha ${state.remoteSheetVersion ? `v${esc(state.remoteSheetVersion)}` : "não sincronizada"}</div>
+      ${compat.status === "warn" ? `<div class="insight amber" style="margin:12px 0 0"><div class="insight-mark">!</div><div><strong>Atualização incompleta</strong><div class="meta">${esc(compat.text)}</div></div></div>` : ""}
     </div>
     ${renderConfig()}`;
 }
@@ -767,11 +785,13 @@ async function syncData(silent = false) {
   state.lancamentos = (json.lancamentos || []).map(normalizeItem);
   state.gastosCartao = (json.gastosCartao || []).map(normalizeItem);
   state.cartoesResumo = json.cartoesResumo || [];
-  state.remoteVersion = json.version || state.config.appVersion || "";
+  state.remoteVersion = json.scriptVersion || json.version || state.config.scriptVersion || state.config.appVersion || "";
   state.remoteBuildDate = json.buildDate || state.config.appBuildDate || "";
+  state.remoteSheetVersion = json.sheetSchemaVersion || state.config.sheetSchemaVersion || "";
   state.lastSync = new Date().toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
   localStorage.setItem("remoteVersion", state.remoteVersion);
   localStorage.setItem("remoteBuildDate", state.remoteBuildDate);
+  localStorage.setItem("remoteSheetVersion", state.remoteSheetVersion);
   localStorage.setItem("lastSync", state.lastSync);
   persist();
   renderMonths();
@@ -819,10 +839,15 @@ function splitTextarea(id) {
 function clearCache() {
   if (!confirm("Limpar dados locais deste aparelho?")) return;
   ["lancamentos","gastosCartao","cartoesResumo","config"].forEach(key => store.del(key));
+  ["lastSync","remoteVersion","remoteBuildDate","remoteSheetVersion"].forEach(key => localStorage.removeItem(key));
   state.lancamentos = [];
   state.gastosCartao = [];
   state.cartoesResumo = [];
   state.config = { ...DEFAULT_CONFIG };
+  state.lastSync = "";
+  state.remoteVersion = "";
+  state.remoteBuildDate = "";
+  state.remoteSheetVersion = "";
   persist();
   renderContent();
   showStatus("Cache local limpo.");
