@@ -49,9 +49,14 @@
   .nav button.active{color:var(--blue)}
   .nav .ico{font-size:18px;line-height:1}
   .hero{background:var(--ink);color:#fff;border-radius:8px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .hero.good{background:#0F766E}
+  .hero.warn{background:#92400E}
+  .hero.bad{background:#991B1B}
   .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
   .hero-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:rgba(255,255,255,.72)}
-  .hero-value{font-family:"JetBrains Mono",monospace;font-size:29px;font-weight:700;line-height:1.1;margin-top:4px}
+  .hero-state{font-size:20px;font-weight:900;line-height:1.1;margin-top:5px}
+  .hero-value{font-family:"JetBrains Mono",monospace;font-size:28px;font-weight:700;line-height:1.1;margin-top:7px}
+  .hero-note{font-size:12px;line-height:1.45;color:rgba(255,255,255,.78);margin-top:8px}
   .hero-pill{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:800;white-space:nowrap}
   .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .hero-mini{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px}
@@ -69,6 +74,14 @@
   .insight{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
   .insight-mark{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-weight:900;flex:0 0 auto}
   .insight strong{display:block;font-size:13px;margin-bottom:2px}
+  .alert-list{display:grid;gap:8px}
+  .alert-item{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.35;color:var(--text)}
+  .alert-dot{width:9px;height:9px;border-radius:999px;margin-top:4px;flex:0 0 auto;background:var(--green)}
+  .alert-item.warn .alert-dot{background:var(--amber)}
+  .alert-item.bad .alert-dot{background:var(--red)}
+  .period-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .period{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:13px}
+  .period strong{display:block;font-family:"JetBrains Mono",monospace;font-size:16px;margin-top:6px}
   .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .quick button,.primary,.secondary,.danger{border:1px solid transparent;border-radius:8px;padding:13px 12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
   .primary{width:100%;background:var(--blue);color:#fff}
@@ -252,27 +265,121 @@ function totalsForMonth(mes = state.mes) {
   const despesas = list.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
   return { receitas, despesas, saldo: receitas - despesas };
 }
+function totalsForMonths(months, ano = Number(state.config.anoAtivo)) {
+  const list = state.lancamentos.filter(item => months.includes(item.mes) && yearFromDate(item.data) === ano);
+  const receitas = list.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
+  const despesas = list.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
+  return { receitas, despesas, saldo: receitas - despesas };
+}
+function monthsForCurrentSemester() {
+  const idx = MESES.indexOf(state.mes);
+  return idx <= 5 ? MESES.slice(0, 6) : MESES.slice(6, 12);
+}
+function getCompassState({ receitas, despesas, saldo }) {
+  const pctReal = receitas > 0 ? Math.round((despesas / receitas) * 100) : 0;
+  const pctBar = Math.min(100, pctReal);
+  const healthyLimit = receitas * 0.7;
+  const remainingHealthy = Math.max(0, healthyLimit - despesas);
+  if (!receitas) {
+    return {
+      cls: "warn",
+      icon: "＋",
+      title: "Comece pelo básico",
+      text: "Lance sua primeira receita para ativar a bússola do mês.",
+      next: "Próximo passo: registrar as entradas previstas."
+    };
+  }
+  if (saldo < 0 || pctReal > 85) {
+    return {
+      cls: "bad",
+      icon: "!",
+      title: "Frear agora",
+      text: "O mês passou da zona segura. Priorize gastos essenciais.",
+      next: "Próximo passo: revisar despesas e evitar novas compras."
+    };
+  }
+  if (pctReal > 70 || saldo < receitas * 0.1) {
+    const next = remainingHealthy > 0
+      ? `Próximo passo: manter gastos até ${fmt(remainingHealthy)} para ficar confortável.`
+      : "Próximo passo: segurar novos gastos até virar o mês.";
+    return {
+      cls: "warn",
+      icon: "!",
+      title: "Ajuste a rota",
+      text: "As despesas estão perto do limite saudável.",
+      next
+    };
+  }
+  return {
+    cls: "good",
+    icon: "✓",
+    title: "Mês no rumo",
+    text: "Você ainda tem espaço para decidir com calma.",
+    next: `Próximo passo: manter despesas abaixo de ${fmt(healthyLimit)} no mês.`
+  };
+}
+function getFinancialAlerts({ receitas, despesas, saldo, pctReal }) {
+  const alerts = [];
+  if (!receitas) alerts.push({ cls:"warn", text:"Registre uma receita para medir o mês com precisão." });
+  if (saldo < 0) alerts.push({ cls:"bad", text:"Saldo negativo no mês. Reduza gastos não essenciais." });
+  if (receitas > 0 && pctReal > 85) alerts.push({ cls:"bad", text:`Despesas em ${pctReal}% da receita. Ação recomendada hoje.` });
+  else if (receitas > 0 && pctReal > 70) alerts.push({ cls:"warn", text:`Despesas em ${pctReal}% da receita. Acompanhe de perto.` });
+  const dueCards = (state.cartoesResumo || [])
+    .map(card => ({ card, days: Number(card.vencimento || 0) ? daysUntilDue(Number(card.vencimento)) : null }))
+    .filter(item => item.days !== null && item.days <= 5)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 2);
+  dueCards.forEach(item => alerts.push({
+    cls: item.days === 0 ? "bad" : "warn",
+    text: `${item.card.nome || "Cartão"} vence ${item.days === 0 ? "hoje" : "em " + item.days + " dias"}.`
+  }));
+  if (!alerts.length) alerts.push({ cls:"good", text:"Nenhum alerta importante agora." });
+  return alerts.slice(0, 3);
+}
+function positiveMonths(months) {
+  return months.reduce((count, mes) => count + (totalsForMonth(mes).saldo > 0 ? 1 : 0), 0);
+}
+function periodStatus(totals, months) {
+  const positives = positiveMonths(months);
+  if (totals.saldo < 0) return { cls:"bad", text:`${positives} de ${months.length} meses positivos` };
+  if (positives < Math.ceil(months.length / 2)) return { cls:"warn", text:`${positives} de ${months.length} meses positivos` };
+  return { cls:"good", text:`${positives} de ${months.length} meses positivos` };
+}
+function renderAlerts(alerts) {
+  return `<div class="panel"><div class="panel-title">Alertas</div><div class="alert-list">${alerts.map(alert => `<div class="alert-item ${alert.cls}"><span class="alert-dot"></span><span>${esc(alert.text)}</span></div>`).join("")}</div></div>`;
+}
+function renderPeriodSummary(label, totals, status) {
+  return `<div class="period">
+    <div class="label">${esc(label)}</div>
+    <strong style="color:${totals.saldo >= 0 ? "var(--blue)" : "var(--red)"}">${fmt(totals.saldo)}</strong>
+    <div class="meta">${esc(status.text)}</div>
+  </div>`;
+}
 function renderDashboard() {
   const { receitas, despesas, saldo } = totalsForMonth();
-  const comprometido = receitas > 0 ? Math.min(100, Math.round((despesas / receitas) * 100)) : 0;
+  const pctReal = receitas > 0 ? Math.round((despesas / receitas) * 100) : 0;
+  const comprometido = Math.min(100, pctReal);
   const recentes = allHistory().slice(0, 5);
   const cats = categoryBreakdown();
   const ano = Number(state.config.anoAtivo);
   const lancAno = state.lancamentos.filter(item => yearFromDate(item.data) === ano);
   const receitaAno = lancAno.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
   const despesaAno = lancAno.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
-  const saldoAno = receitaAno - despesaAno;
-  const insight = receitas === 0
-    ? { label:"Comece pelo básico", text:"Lance uma receita para ativar a leitura do mês.", cls:"blue", icon:"＋" }
-    : comprometido > 85
-      ? { label:"Atenção ao mês", text:"As despesas passaram de 85% da receita.", cls:"red", icon:"!" }
-      : { label:"Mês sob controle", text:"O comprometimento está dentro de uma faixa saudável.", cls:"green", icon:"✓" };
+  const anoTotals = { receitas: receitaAno, despesas: despesaAno, saldo: receitaAno - despesaAno };
+  const semesterMonths = monthsForCurrentSemester();
+  const semestreTotals = totalsForMonths(semesterMonths, ano);
+  const compass = getCompassState({ receitas, despesas, saldo });
+  const alerts = getFinancialAlerts({ receitas, despesas, saldo, pctReal });
+  const semestreStatus = periodStatus(semestreTotals, semesterMonths);
+  const anoStatus = periodStatus(anoTotals, MESES);
   return `
-    <section class="hero">
+    <section class="hero ${compass.cls}">
       <div class="hero-top">
         <div>
-          <div class="hero-title">Saldo de ${esc(state.mes)}</div>
+          <div class="hero-title">${esc(state.mes)} · Bússola financeira</div>
+          <div class="hero-state">${esc(compass.title)}</div>
           <div class="hero-value">${fmt(saldo)}</div>
+          <div class="hero-note">${esc(compass.text)}</div>
         </div>
         <div class="hero-pill">${esc(ano)}</div>
       </div>
@@ -280,23 +387,21 @@ function renderDashboard() {
         <div class="hero-mini"><div class="label">Entradas</div><strong>${fmt(receitas)}</strong></div>
         <div class="hero-mini"><div class="label">Saídas</div><strong>${fmt(despesas)}</strong></div>
       </div>
+      <div class="hero-note">${esc(compass.next)}</div>
     </section>
     <div class="quick">
       <button class="green" onclick="openEntry('receita')">↑ Receita</button>
       <button class="red" onclick="openEntry('despesa')">↓ Despesa</button>
     </div>
-    <div class="insight">
-      <div class="insight-mark ${insight.cls}">${insight.icon}</div>
-      <div><strong>${insight.label}</strong><div class="meta">${insight.text}</div></div>
-    </div>
     <div class="panel">
-      <div class="panel-title"><span>Comprometimento</span><span>${comprometido}%</span></div>
+      <div class="panel-title"><span>Comprometimento</span><span>${pctReal}%</span></div>
       <div class="bar"><span style="width:${comprometido}%;background:${comprometido > 85 ? "var(--red)" : "var(--green)"}"></span></div>
-      <div class="meta" style="margin-top:8px">${receitas ? "Meta prática: manter despesas abaixo de 85% da receita." : "Lance uma receita para medir comprometimento."}</div>
+      <div class="meta" style="margin-top:8px">Zona saudável: até 70%. Atenção: 71% a 85%. Crítico: acima de 85%.</div>
     </div>
-    <div class="grid">
-      ${kpi("Saldo anual", fmt(saldoAno), saldoAno >= 0 ? "var(--blue)" : "var(--red)")}
-      ${kpi("Movimentos", String(allHistory().length), "var(--violet)")}
+    ${renderAlerts(alerts)}
+    <div class="period-grid">
+      ${renderPeriodSummary("Semestre", semestreTotals, semestreStatus)}
+      ${renderPeriodSummary("Ano", anoTotals, anoStatus)}
     </div>
     ${cats.length ? `<div class="panel"><div class="panel-title">Top categorias</div>${cats.map(catRow).join("")}</div>` : ""}
     <div class="panel">
