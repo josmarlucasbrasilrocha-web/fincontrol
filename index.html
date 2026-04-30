@@ -12,11 +12,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#F3F4F6;--surface:#FFFFFF;--surface2:#F9FAFB;--line:#E5E7EB;
-    --text:#111827;--muted:#6B7280;--soft:#9CA3AF;
+    --bg:#F4F7FB;--surface:#FFFFFF;--surface2:#F9FAFB;--line:#E2E8F0;
+    --text:#0F172A;--muted:#64748B;--soft:#94A3B8;
     --green:#059669;--green-bg:#ECFDF5;--red:#DC2626;--red-bg:#FEF2F2;
     --blue:#2563EB;--blue-bg:#EFF6FF;--violet:#7C3AED;--violet-bg:#F5F3FF;
-    --amber:#D97706;--amber-bg:#FFFBEB;--shadow:0 10px 28px rgba(17,24,39,.08);
+    --amber:#D97706;--amber-bg:#FFFBEB;--ink:#1E3A5F;--shadow:0 10px 24px rgba(15,23,42,.07);
   }
   [data-theme="dark"] {
     --bg:#111827;--surface:#1F2937;--surface2:#273244;--line:#374151;
@@ -44,10 +44,19 @@
   .month{border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800;min-width:44px}
   .month.active{background:var(--blue);border-color:var(--blue);color:#fff}
   .content{flex:1;overflow:auto;padding:14px 14px 18px}
-  .nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
+  .nav{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom)}
   .nav button{border:0;background:transparent;color:var(--soft);padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
   .nav button.active{color:var(--blue)}
   .nav .ico{font-size:18px;line-height:1}
+  .hero{background:var(--ink);color:#fff;border-radius:8px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .hero-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:rgba(255,255,255,.72)}
+  .hero-value{font-family:"JetBrains Mono",monospace;font-size:29px;font-weight:700;line-height:1.1;margin-top:4px}
+  .hero-pill{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:7px 9px;font-size:11px;font-weight:800;white-space:nowrap}
+  .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .hero-mini{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:10px}
+  .hero-mini .label{color:rgba(255,255,255,.66)}
+  .hero-mini strong{display:block;font-family:"JetBrains Mono",monospace;font-size:15px;margin-top:5px}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .card,.kpi,.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
   .kpi{padding:13px}
@@ -57,6 +66,9 @@
   .wide .value{font-size:22px}
   .panel{padding:13px;margin-bottom:12px}
   .panel-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .insight{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+  .insight-mark{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;font-weight:900;flex:0 0 auto}
+  .insight strong{display:block;font-size:13px;margin-bottom:2px}
   .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .quick button,.primary,.secondary,.danger{border:1px solid transparent;border-radius:8px;padding:13px 12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
   .primary{width:100%;background:var(--blue);color:#fff}
@@ -97,6 +109,9 @@
   .modal-title{font-size:18px;font-weight:900}
   .close{width:36px;height:36px;border:1px solid var(--line);background:var(--surface2);border-radius:8px}
   .spinner{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+  .fab{position:fixed;left:50%;bottom:calc(58px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:35;border:0;border-radius:999px;background:var(--blue);color:#fff;box-shadow:0 14px 30px rgba(37,99,235,.34);padding:13px 18px;font-weight:900;display:flex;align-items:center;gap:8px}
+  .action-grid{display:grid;grid-template-columns:1fr;gap:10px}
+  .action-grid button{justify-content:flex-start;text-align:left}
   @keyframes spin{to{transform:rotate(360deg)}}
   @media (max-width:360px){.content{padding:10px}.value{font-size:16px}.wide .value{font-size:19px}.quick{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.amount{font-size:12px}}
 </style>
@@ -118,11 +133,11 @@
   <main class="content" id="content"></main>
   <nav class="nav" id="nav">
     <button class="active" data-tab="dashboard" onclick="navigate('dashboard')"><span class="ico">◉</span>Início</button>
-    <button data-tab="lancar" onclick="navigate('lancar')"><span class="ico">＋</span>Lançar</button>
     <button data-tab="historico" onclick="navigate('historico')"><span class="ico">☰</span>Histórico</button>
     <button data-tab="cartoes" onclick="navigate('cartoes')"><span class="ico">▣</span>Cartões</button>
-    <button data-tab="config" onclick="navigate('config')"><span class="ico">⚙</span>Config</button>
+    <button data-tab="mais" onclick="navigate('mais')"><span class="ico">⚙</span>Mais</button>
   </nav>
+  <button class="fab" onclick="openActionChooser()">＋ Lançar</button>
 </div>
 <div class="modal-layer" id="modalLayer" onclick="closeModalOutside(event)">
   <section class="modal">
@@ -134,7 +149,7 @@
   </section>
 </div>
 <script>
-const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbxrfCuffv0TIsv7nqzO4y8fq3mIh1fd5OauCmMIwsWWsHOnQO9P_i4h8wK2htsYhIdaZw/exec";
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwJ-mQK6aAuDyR1Zobeoh9J9TP-TVRrXzCd-DKyUPc6V9WAknYgpaLIzyNMxCs9q9_iCg/exec";
 const APP_STORAGE_VERSION = "20.1";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
@@ -145,7 +160,7 @@ const DEFAULT_CONFIG = {
   cartoesAtivos: Array.from({ length: 10 }, (_, i) => `Cartão ${i + 1}`),
   tokenInstalacao: ""
 };
-const titles = { dashboard:"Dashboard", lancar:"Lançar", historico:"Histórico", cartoes:"Cartões", config:"Configuração" };
+const titles = { dashboard:"Dashboard", historico:"Histórico", cartoes:"Cartões", mais:"Mais" };
 const store = {
   get(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } },
   set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
@@ -224,7 +239,7 @@ function navigate(tab) {
   renderContent();
 }
 function renderContent() {
-  const views = { dashboard: renderDashboard, lancar: renderLancar, historico: renderHistorico, cartoes: renderCartoes, config: renderConfig };
+  const views = { dashboard: renderDashboard, historico: renderHistorico, cartoes: renderCartoes, mais: renderMais };
   document.getElementById("content").innerHTML = views[state.tab]();
 }
 
@@ -242,23 +257,46 @@ function renderDashboard() {
   const comprometido = receitas > 0 ? Math.min(100, Math.round((despesas / receitas) * 100)) : 0;
   const recentes = allHistory().slice(0, 5);
   const cats = categoryBreakdown();
+  const ano = Number(state.config.anoAtivo);
+  const lancAno = state.lancamentos.filter(item => yearFromDate(item.data) === ano);
+  const receitaAno = lancAno.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
+  const despesaAno = lancAno.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
+  const saldoAno = receitaAno - despesaAno;
+  const insight = receitas === 0
+    ? { label:"Comece pelo básico", text:"Lance uma receita para ativar a leitura do mês.", cls:"blue", icon:"＋" }
+    : comprometido > 85
+      ? { label:"Atenção ao mês", text:"As despesas passaram de 85% da receita.", cls:"red", icon:"!" }
+      : { label:"Mês sob controle", text:"O comprometimento está dentro de uma faixa saudável.", cls:"green", icon:"✓" };
   return `
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-title">Saldo de ${esc(state.mes)}</div>
+          <div class="hero-value">${fmt(saldo)}</div>
+        </div>
+        <div class="hero-pill">${esc(ano)}</div>
+      </div>
+      <div class="hero-grid">
+        <div class="hero-mini"><div class="label">Entradas</div><strong>${fmt(receitas)}</strong></div>
+        <div class="hero-mini"><div class="label">Saídas</div><strong>${fmt(despesas)}</strong></div>
+      </div>
+    </section>
     <div class="quick">
       <button class="green" onclick="openEntry('receita')">↑ Receita</button>
       <button class="red" onclick="openEntry('despesa')">↓ Despesa</button>
     </div>
-    <div class="grid">
-      ${kpi("Receitas", fmt(receitas), "var(--green)")}
-      ${kpi("Despesas", fmt(despesas), "var(--red)")}
-      <div class="kpi wide">
-        <div><div class="label">Saldo ${esc(state.mes)}</div><div class="value" style="color:${saldo >= 0 ? "var(--blue)" : "var(--red)"}">${fmt(saldo)}</div></div>
-        <div style="text-align:right"><div class="label">Comprometido</div><div class="value" style="color:${comprometido > 85 ? "var(--red)" : "var(--green)"}">${comprometido}%</div></div>
-      </div>
+    <div class="insight">
+      <div class="insight-mark ${insight.cls}">${insight.icon}</div>
+      <div><strong>${insight.label}</strong><div class="meta">${insight.text}</div></div>
     </div>
     <div class="panel">
-      <div class="panel-title"><span>Saúde do mês</span><span>${esc(state.config.anoAtivo)}</span></div>
+      <div class="panel-title"><span>Comprometimento</span><span>${comprometido}%</span></div>
       <div class="bar"><span style="width:${comprometido}%;background:${comprometido > 85 ? "var(--red)" : "var(--green)"}"></span></div>
       <div class="meta" style="margin-top:8px">${receitas ? "Meta prática: manter despesas abaixo de 85% da receita." : "Lance uma receita para medir comprometimento."}</div>
+    </div>
+    <div class="grid">
+      ${kpi("Saldo anual", fmt(saldoAno), saldoAno >= 0 ? "var(--blue)" : "var(--red)")}
+      ${kpi("Movimentos", String(allHistory().length), "var(--violet)")}
     </div>
     ${cats.length ? `<div class="panel"><div class="panel-title">Top categorias</div>${cats.map(catRow).join("")}</div>` : ""}
     <div class="panel">
@@ -278,20 +316,6 @@ function categoryBreakdown() {
 }
 function catRow(row) {
   return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;gap:10px"><strong style="font-size:13px">${esc(row.cat)}</strong><span class="amount" style="color:var(--red)">${fmt(row.value)}</span></div><div class="bar"><span style="width:${row.pct}%;background:var(--violet)"></span></div></div>`;
-}
-
-function renderLancar() {
-  const list = lancMes();
-  return `
-    <div class="quick">
-      <button class="green" onclick="openEntry('receita')">↑ Nova receita</button>
-      <button class="red" onclick="openEntry('despesa')">↓ Nova despesa</button>
-    </div>
-    <button class="primary violet" onclick="openEntry('cartao')" style="margin-bottom:12px">▣ Gasto no cartão</button>
-    <div class="panel">
-      <div class="panel-title"><span>${esc(state.mes)} / ${esc(state.config.anoAtivo)}</span><span>${list.length} itens</span></div>
-      ${list.length ? `<div class="list">${list.map(itemRow).join("")}</div>` : empty("Nenhum movimento neste mês.")}
-    </div>`;
 }
 
 function renderHistorico() {
@@ -409,6 +433,35 @@ function renderConfig() {
     </div>`;
 }
 
+function renderMais() {
+  const total = allHistory().length;
+  return `
+    <div class="panel">
+      <div class="panel-title">Ações rápidas</div>
+      <div class="action-grid">
+        <button class="green" onclick="openEntry('receita')">↑ Nova receita</button>
+        <button class="red" onclick="openEntry('despesa')">↓ Nova despesa</button>
+        <button class="violet" onclick="openEntry('cartao')">▣ Gasto no cartão</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span>Resumo do app</span><span>${total} movimentos</span></div>
+      <div class="meta">Fonte da verdade: Google Sheets. O app sincroniza ao abrir e depois de salvar.</div>
+    </div>
+    ${renderConfig()}`;
+}
+
+function openActionChooser() {
+  document.getElementById("modalTitle").textContent = "Novo lançamento";
+  document.getElementById("modalBody").innerHTML = `
+    <div class="action-grid">
+      <button class="green" onclick="openEntry('receita')">↑ Receita</button>
+      <button class="red" onclick="openEntry('despesa')">↓ Despesa</button>
+      <button class="violet" onclick="openEntry('cartao')">▣ Gasto no cartão</button>
+    </div>`;
+  document.getElementById("modalLayer").classList.add("open");
+}
+
 function openEntry(type, item = null) {
   modalMode = type;
   editing = item;
@@ -422,8 +475,6 @@ function entryForm(type, item = {}) {
   const catList = type === "receita" ? state.config.categoriasReceita : state.config.categoriasDespesa;
   const catOptions = (catList || []).map(cat => `<option ${cat === item.cat ? "selected" : ""}>${esc(cat)}</option>`).join("");
   const cardOptions = (state.config.cartoesAtivos || []).map(card => `<option ${card === item.cartao ? "selected" : ""}>${esc(card)}</option>`).join("");
-  const mes = item.mes || monthFromDate(item.data || today());
-  const mesOptions = MESES.map(m => `<option value="${m}" ${m === mes ? "selected" : ""}>${m}</option>`).join("");
   if (type === "cartao") return `
     <div class="form">
       <div class="field"><label>Cartão</label><select class="select" id="f-cartao">${cardOptions}</select></div>
@@ -443,9 +494,9 @@ function entryForm(type, item = {}) {
       <div class="field"><label>Categoria</label><select class="select" id="f-cat">${catOptions}</select></div>
       <div class="form-row">
         <div class="field"><label>Valor</label><input class="input" id="f-valor" type="number" step="0.01" inputmode="decimal" value="${esc(item.valor || "")}"></div>
-        <div class="field"><label>Mês</label><select class="select" id="f-mes">${mesOptions}</select></div>
+        <div class="field"><label>Data</label><input class="input" id="f-data" type="date" value="${esc(item.data || today())}"></div>
       </div>
-      <div class="field"><label>Data</label><input class="input" id="f-data" type="date" value="${esc(item.data || today())}" onchange="document.getElementById('f-mes').value=monthFromDate(this.value)"></div>
+      <div class="meta">O mês será definido automaticamente pela data.</div>
       <button class="primary ${type === "receita" ? "green" : "red"}" onclick="saveEntry()">Salvar</button>
     </div>`;
 }
@@ -481,7 +532,7 @@ async function saveEntry() {
     upsertLocal("gastosCartao", data);
   } else {
     data.tipo = modalMode;
-    data.mes = document.getElementById("f-mes").value || monthFromDate(data.data);
+    data.mes = monthFromDate(data.data);
     data.ano = yearFromDate(data.data);
     upsertLocal("lancamentos", data);
   }
