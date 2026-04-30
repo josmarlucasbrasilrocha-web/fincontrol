@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FinControl">
 <meta name="theme-color" content="#111827">
-<title>FinControl v20</title>
+<title>FinControl v20.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -144,7 +144,7 @@
   <div class="status" id="status"></div>
   <header class="topbar">
     <div>
-      <div class="eyebrow">FinControl v20</div>
+      <div class="eyebrow" id="versionLabel">FinControl v20.2</div>
       <div class="title" id="title">Dashboard</div>
     </div>
     <div class="actions">
@@ -172,11 +172,13 @@
   </section>
 </div>
 <script>
-const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
-const APP_STORAGE_VERSION = "20.1";
+const APP_VERSION = "20.2";
+const APP_BUILD_DATE = "2026-04-30";
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwXGgs0XpO6LJLqYiaSyv8MNOauvpcCuSyRZcbEVkstyH8cgeUyu8PG0SsmoTZChocNIg/exec";
+const APP_STORAGE_VERSION = "20.2";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
-  appVersion: "20.0",
+  appVersion: APP_VERSION,
   anoAtivo: new Date().getFullYear(),
   categoriasReceita: ["Salário","Freelance","Investimentos","Aluguel Recebido","Bônus","Outros"],
   categoriasDespesa: ["Moradia","Alimentação","Transporte","Saúde","Educação","Lazer","Vestuário","Assinaturas","Pet","Presentes","Outros"],
@@ -207,6 +209,8 @@ let state = {
   config: { ...DEFAULT_CONFIG, ...store.get("config", {}) },
   settings: { sheetUrl: localStorage.getItem("sheetUrl") || DEFAULT_SHEET_URL, token: localStorage.getItem("installToken") || "" },
   lastSync: localStorage.getItem("lastSync") || "",
+  remoteVersion: localStorage.getItem("remoteVersion") || "",
+  remoteBuildDate: localStorage.getItem("remoteBuildDate") || "",
   cartoesResumo: store.get("cartoesResumo", []),
   historyFilter: "todos",
   query: "",
@@ -565,6 +569,7 @@ function renderConfig() {
       <summary>Avançado</summary>
       <div class="advanced-body">
         <div class="form">
+          <div class="meta">Versão: App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Build ${APP_BUILD_DATE}</div>
           <div class="field"><label>URL do Apps Script</label><input class="input" id="cfg-url" value="${esc(state.settings.sheetUrl)}"></div>
           <div class="field"><label>Token de instalação</label><input class="input" id="cfg-token" value="${esc(state.settings.token)}" placeholder="Opcional"></div>
           <div class="form-row">
@@ -591,6 +596,7 @@ function renderMais() {
     <div class="panel">
       <div class="panel-title"><span>Resumo do app</span><span>${total} movimentos</span></div>
       <div class="meta">Fonte da verdade: Google Sheets. O app sincroniza ao abrir e depois de salvar.</div>
+      <div class="meta" style="margin-top:6px">App v${APP_VERSION} · Script ${state.remoteVersion ? `v${esc(state.remoteVersion)}` : "não sincronizado"} · Build ${APP_BUILD_DATE}</div>
     </div>
     ${renderConfig()}`;
 }
@@ -761,7 +767,11 @@ async function syncData(silent = false) {
   state.lancamentos = (json.lancamentos || []).map(normalizeItem);
   state.gastosCartao = (json.gastosCartao || []).map(normalizeItem);
   state.cartoesResumo = json.cartoesResumo || [];
+  state.remoteVersion = json.version || state.config.appVersion || "";
+  state.remoteBuildDate = json.buildDate || state.config.appBuildDate || "";
   state.lastSync = new Date().toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
+  localStorage.setItem("remoteVersion", state.remoteVersion);
+  localStorage.setItem("remoteBuildDate", state.remoteBuildDate);
   localStorage.setItem("lastSync", state.lastSync);
   persist();
   renderMonths();
