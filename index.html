@@ -135,6 +135,7 @@
 </div>
 <script>
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbyk2amXARAg9M12mlmDFp-Tt5k1-tsgp538JvCbrj_Up3KUKfiFidlkxolva4K8nyl2bQ/exec";
+const APP_STORAGE_VERSION = "20.1";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
   appVersion: "20.0",
@@ -152,11 +153,13 @@ const store = {
 };
 const previousDefaultUrl = localStorage.getItem("defaultSheetUrl");
 const savedSheetUrl = localStorage.getItem("sheetUrl");
-if (previousDefaultUrl && previousDefaultUrl !== DEFAULT_SHEET_URL && savedSheetUrl === previousDefaultUrl) {
+const savedStorageVersion = localStorage.getItem("appStorageVersion");
+if ((previousDefaultUrl && previousDefaultUrl !== DEFAULT_SHEET_URL && (!savedSheetUrl || savedSheetUrl === previousDefaultUrl)) || savedStorageVersion !== APP_STORAGE_VERSION) {
   ["lancamentos","gastosCartao","cartoesResumo","config"].forEach(key => store.del(key));
   localStorage.setItem("sheetUrl", DEFAULT_SHEET_URL);
 }
 localStorage.setItem("defaultSheetUrl", DEFAULT_SHEET_URL);
+localStorage.setItem("appStorageVersion", APP_STORAGE_VERSION);
 let state = {
   tab: "dashboard",
   mes: MESES[new Date().getMonth()],
@@ -415,6 +418,7 @@ function openEntry(type, item = null) {
   document.getElementById("modalLayer").classList.add("open");
 }
 function entryForm(type, item = {}) {
+  item = item || {};
   const catList = type === "receita" ? state.config.categoriasReceita : state.config.categoriasDespesa;
   const catOptions = (catList || []).map(cat => `<option ${cat === item.cat ? "selected" : ""}>${esc(cat)}</option>`).join("");
   const cardOptions = (state.config.cartoesAtivos || []).map(card => `<option ${card === item.cartao ? "selected" : ""}>${esc(card)}</option>`).join("");
@@ -485,7 +489,12 @@ async function saveEntry() {
   closeModal();
   renderContent();
   const result = await apiRequest(action, { type: modalMode === "cartao" ? "cartao" : "lancamento", data });
-  showStatus(result.status === "ok" ? "Salvo e sincronizado." : "Salvo localmente. Revise a sincronização.", result.status === "ok" ? "success" : "error", 3400);
+  if (result.status === "ok") {
+    showStatus("Salvo na planilha.", "success", 2200);
+    setTimeout(() => syncData(true), 650);
+  } else {
+    showStatus("Salvo localmente. Revise a sincronização.", "error", 3400);
+  }
 }
 function upsertLocal(key, item) {
   const list = state[key].filter(current => current.id !== item.id);
@@ -510,6 +519,7 @@ async function apiRequest(action, payload = {}) {
   const url = (state.settings.sheetUrl || "").trim();
   if (!url) return { status:"local", message:"URL não configurada." };
   const body = { action, token: state.settings.token || "", ...payload };
+  if (["insert","update","delete"].includes(action)) return writeRequest(url, body);
   try {
     const res = await fetch(url, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body) });
     const json = await res.json();
@@ -528,23 +538,38 @@ async function apiRequest(action, payload = {}) {
     return { status:"error", message:String(err) };
   }
 }
-async function syncData() {
+async function writeRequest(url, body) {
+  const params = new URLSearchParams();
+  Object.entries(body).forEach(([key, value]) => params.set(key, typeof value === "object" ? JSON.stringify(value) : value));
+  try {
+    await fetch(`${url}?${params.toString()}`, { method:"GET", mode:"no-cors" });
+    return { status:"ok", transport:"get-no-cors" };
+  } catch (err) {
+    try {
+      const res = await fetch(url, { method:"POST", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+      return await res.json();
+    } catch (postErr) {
+      return { status:"error", message:String(postErr) };
+    }
+  }
+}
+async function syncData(silent = false) {
   if (state.syncing) return;
   state.syncing = true;
   document.getElementById("syncBtn").innerHTML = '<span class="spinner"></span>';
-  showStatus("Sincronizando...", "loading", 7000);
+  if (!silent) showStatus("Sincronizando...", "loading", 7000);
   const json = await apiRequest("getAll");
   state.syncing = false;
   document.getElementById("syncBtn").textContent = "⟳";
   if (json.status !== "ok") return showStatus(json.message || "Não foi possível sincronizar.", "error", 4200);
   state.config = { ...state.config, ...json.config };
-  state.lancamentos = mergeById(state.lancamentos, (json.lancamentos || []).map(normalizeItem));
-  state.gastosCartao = mergeById(state.gastosCartao, (json.gastosCartao || []).map(normalizeItem));
+  state.lancamentos = (json.lancamentos || []).map(normalizeItem);
+  state.gastosCartao = (json.gastosCartao || []).map(normalizeItem);
   state.cartoesResumo = json.cartoesResumo || [];
   persist();
   renderMonths();
   renderContent();
-  showStatus("Dados sincronizados.", "success");
+  if (!silent) showStatus("Dados sincronizados.", "success");
 }
 function mergeById(local, remote) {
   const map = new Map();
