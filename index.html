@@ -82,6 +82,16 @@
   .period-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .period{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:13px}
   .period strong{display:block;font-family:"JetBrains Mono",monospace;font-size:16px;margin-top:6px}
+  .setup-list{display:grid;gap:9px}
+  .setup-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+  .setup-check{width:24px;height:24px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:900;flex:0 0 auto}
+  .setup-item.done .setup-check{background:var(--green-bg);color:var(--green)}
+  .setup-item.todo .setup-check{background:var(--amber-bg);color:var(--amber)}
+  .setup-item strong{display:block;font-size:13px;margin-bottom:2px}
+  details.advanced{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0;margin-bottom:12px;overflow:hidden}
+  details.advanced summary{list-style:none;padding:13px;font-weight:900;color:var(--muted);cursor:pointer}
+  details.advanced summary::-webkit-details-marker{display:none}
+  details.advanced .advanced-body{border-top:1px solid var(--line);padding:13px}
   .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
   .quick button,.primary,.secondary,.danger{border:1px solid transparent;border-radius:8px;padding:13px 12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
   .primary{width:100%;background:var(--blue);color:#fff}
@@ -162,7 +172,7 @@
   </section>
 </div>
 <script>
-const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbwJ-mQK6aAuDyR1Zobeoh9J9TP-TVRrXzCd-DKyUPc6V9WAknYgpaLIzyNMxCs9q9_iCg/exec";
+const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
 const APP_STORAGE_VERSION = "20.1";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
@@ -196,6 +206,7 @@ let state = {
   gastosCartao: store.get("gastosCartao", []),
   config: { ...DEFAULT_CONFIG, ...store.get("config", {}) },
   settings: { sheetUrl: localStorage.getItem("sheetUrl") || DEFAULT_SHEET_URL, token: localStorage.getItem("installToken") || "" },
+  lastSync: localStorage.getItem("lastSync") || "",
   cartoesResumo: store.get("cartoesResumo", []),
   historyFilter: "todos",
   query: "",
@@ -506,36 +517,64 @@ function daysUntilDue(day) {
   return Math.max(0, Math.ceil((due - now) / 86400000));
 }
 
+function renderSetupChecklist() {
+  const hasUrl = Boolean((state.settings.sheetUrl || "").trim());
+  const hasYear = Boolean(Number(state.config.anoAtivo));
+  const hasCategories = (state.config.categoriasReceita || []).length > 0 && (state.config.categoriasDespesa || []).length > 0;
+  const hasCards = (state.config.cartoesAtivos || []).length > 0;
+  const hasData = allHistory().length > 0;
+  const items = [
+    { done: hasUrl, title: "Planilha conectada", text: hasUrl ? "URL do Apps Script configurada." : "Informe a URL do Apps Script para conectar." },
+    { done: hasYear, title: "Ano de trabalho", text: hasYear ? `Ano ativo: ${state.config.anoAtivo}.` : "Defina o ano ativo." },
+    { done: hasCategories, title: "Categorias prontas", text: hasCategories ? "Receitas e despesas têm categorias cadastradas." : "Cadastre categorias para organizar os lançamentos." },
+    { done: hasCards, title: "Cartões configurados", text: hasCards ? `${state.config.cartoesAtivos.length} cartão(ões) ativo(s).` : "Cadastre pelo menos um cartão se usar crédito." },
+    { done: hasData, title: "Pronto para usar", text: hasData ? "Já existem movimentos sincronizados." : "Lance a primeira receita ou despesa." }
+  ];
+  return `<div class="panel">
+    <div class="panel-title">Checklist guiado</div>
+    <div class="setup-list">${items.map(item => `<div class="setup-item ${item.done ? "done" : "todo"}">
+      <div class="setup-check">${item.done ? "✓" : "!"}</div>
+      <div><strong>${esc(item.title)}</strong><div class="meta">${esc(item.text)}</div></div>
+    </div>`).join("")}</div>
+  </div>`;
+}
+function renderConnectionStatus() {
+  const connected = Boolean((state.settings.sheetUrl || "").trim());
+  return `<div class="panel">
+    <div class="panel-title"><span>Conexão</span><span class="chip ${connected ? "active" : ""}">${connected ? "Conectado" : "Pendente"}</span></div>
+    <div class="meta">${connected ? "Sua planilha está configurada como fonte da verdade." : "Configure a URL do Apps Script para sincronizar."}</div>
+    <div class="meta" style="margin-top:6px">Última sincronização: ${state.lastSync ? esc(state.lastSync) : "ainda não registrada"}</div>
+    <button class="primary" style="margin-top:12px" onclick="syncData()">Testar conexão</button>
+  </div>`;
+}
 function renderConfig() {
   return `
+    ${renderConnectionStatus()}
+    ${renderSetupChecklist()}
     <div class="panel">
-      <div class="panel-title">Instalação</div>
-      <div class="form">
-        <div class="field"><label>URL do Apps Script</label><input class="input" id="cfg-url" value="${esc(state.settings.sheetUrl)}"></div>
-        <div class="field"><label>Token de instalação</label><input class="input" id="cfg-token" value="${esc(state.settings.token)}" placeholder="Opcional"></div>
-        <div class="form-row">
-          <button class="secondary" onclick="saveLocalSettings()">Salvar local</button>
-          <button class="primary" onclick="syncData()">Sincronizar</button>
-        </div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-title">Cadastros do Sheets</div>
+      <div class="panel-title">Ajustes principais</div>
       <div class="form">
         <div class="field"><label>Ano ativo</label><input class="input" id="cfg-year" type="number" value="${esc(state.config.anoAtivo)}"></div>
         <div class="field"><label>Categorias de receita</label><textarea class="textarea" id="cfg-rec">${esc((state.config.categoriasReceita || []).join(", "))}</textarea></div>
         <div class="field"><label>Categorias de despesa</label><textarea class="textarea" id="cfg-desp">${esc((state.config.categoriasDespesa || []).join(", "))}</textarea></div>
         <div class="field"><label>Cartões ativos</label><textarea class="textarea" id="cfg-cards">${esc((state.config.cartoesAtivos || []).join(", "))}</textarea></div>
-        <button class="primary" onclick="saveRemoteConfig()">Salvar cadastros</button>
+        <button class="primary" onclick="saveRemoteConfig()">Salvar e sincronizar</button>
       </div>
     </div>
-    <div class="panel">
-      <div class="panel-title">Manutenção</div>
-      <div class="form-row">
-        <button class="secondary" onclick="exportLocalData()">Exportar JSON</button>
-        <button class="danger" onclick="clearCache()">Limpar cache</button>
+    <details class="advanced">
+      <summary>Avançado</summary>
+      <div class="advanced-body">
+        <div class="form">
+          <div class="field"><label>URL do Apps Script</label><input class="input" id="cfg-url" value="${esc(state.settings.sheetUrl)}"></div>
+          <div class="field"><label>Token de instalação</label><input class="input" id="cfg-token" value="${esc(state.settings.token)}" placeholder="Opcional"></div>
+          <div class="form-row">
+            <button class="secondary" onclick="saveLocalSettings()">Salvar local</button>
+            <button class="secondary" onclick="exportLocalData()">Exportar JSON</button>
+          </div>
+          <button class="danger" onclick="clearCache()">Limpar dados deste aparelho</button>
+        </div>
       </div>
-    </div>`;
+    </details>`;
 }
 
 function renderMais() {
@@ -722,6 +761,8 @@ async function syncData(silent = false) {
   state.lancamentos = (json.lancamentos || []).map(normalizeItem);
   state.gastosCartao = (json.gastosCartao || []).map(normalizeItem);
   state.cartoesResumo = json.cartoesResumo || [];
+  state.lastSync = new Date().toLocaleString("pt-BR", { dateStyle:"short", timeStyle:"short" });
+  localStorage.setItem("lastSync", state.lastSync);
   persist();
   renderMonths();
   renderContent();
@@ -743,7 +784,7 @@ function saveLocalSettings() {
   showStatus("Configuração local salva.");
 }
 async function saveRemoteConfig() {
-  saveLocalSettings();
+  if (document.getElementById("cfg-url")) saveLocalSettings();
   const config = {
     anoAtivo: Number(document.getElementById("cfg-year").value) || new Date().getFullYear(),
     categoriasReceita: splitTextarea("cfg-rec"),
@@ -755,7 +796,12 @@ async function saveRemoteConfig() {
   persist();
   renderContent();
   const result = await apiRequest("saveConfig", { config });
-  showStatus(result.status === "ok" ? "Cadastros salvos no Sheets." : "Cadastros salvos localmente.", result.status === "ok" ? "success" : "error", 3600);
+  if (result.status === "ok") {
+    await syncData(true);
+    showStatus("Configuração salva e sincronizada.", "success", 2600);
+  } else {
+    showStatus("Configuração salva localmente.", "error", 3600);
+  }
 }
 function splitTextarea(id) {
   return document.getElementById(id).value.split(",").map(v => v.trim()).filter(Boolean);
