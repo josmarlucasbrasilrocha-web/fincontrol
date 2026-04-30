@@ -150,6 +150,13 @@ const store = {
   set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
   del(key) { localStorage.removeItem(key); }
 };
+const previousDefaultUrl = localStorage.getItem("defaultSheetUrl");
+const savedSheetUrl = localStorage.getItem("sheetUrl");
+if (previousDefaultUrl && previousDefaultUrl !== DEFAULT_SHEET_URL && savedSheetUrl === previousDefaultUrl) {
+  ["lancamentos","gastosCartao","cartoesResumo","config"].forEach(key => store.del(key));
+  localStorage.setItem("sheetUrl", DEFAULT_SHEET_URL);
+}
+localStorage.setItem("defaultSheetUrl", DEFAULT_SHEET_URL);
 let state = {
   tab: "dashboard",
   mes: MESES[new Date().getMonth()],
