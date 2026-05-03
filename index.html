@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FinControl">
 <meta name="theme-color" content="#111827">
-<title>FinControl v20.3</title>
+<title>FinControl v20.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +178,7 @@
   <div class="status" id="status"></div>
   <header class="topbar">
     <div>
-      <div class="eyebrow" id="versionLabel">FinControl v20.3</div>
+      <div class="eyebrow" id="versionLabel">FinControl v20.4</div>
       <div class="title" id="title">Dashboard</div>
     </div>
     <div class="actions">
@@ -206,10 +206,10 @@
   </section>
 </div>
 <script>
-const APP_VERSION = "20.3";
-const APP_BUILD_DATE = "2026-04-30";
+const APP_VERSION = "20.4";
+const APP_BUILD_DATE = "2026-05-03";
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
-const APP_STORAGE_VERSION = "20.3";
+const APP_STORAGE_VERSION = "20.4";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
   appVersion: APP_VERSION,
@@ -741,6 +741,10 @@ function renderConfig() {
             <button class="secondary" onclick="saveLocalSettings()">Salvar local</button>
             <button class="secondary" onclick="exportLocalData()">Exportar JSON</button>
           </div>
+          <div class="form-row">
+            <button class="secondary" onclick="runDiagnostics()">Diagnóstico</button>
+            <button class="secondary" onclick="runMigration()">Atualizar estrutura</button>
+          </div>
           <button class="danger" onclick="clearCache()">Limpar dados deste aparelho</button>
         </div>
       </div>
@@ -1010,6 +1014,52 @@ async function saveRemoteConfig() {
     showStatus("Configuração salva localmente.", "error", 3600);
   }
 }
+
+async function runDiagnostics() {
+  showStatus("Verificando planilha...", "loading", 6000);
+  const result = await apiRequest("diagnostics");
+  if (result.status !== "ok") return showStatus(result.message || "Diagnóstico falhou.", "error", 4200);
+  showTechnicalReport("Diagnóstico da planilha", result.diagnostics);
+  showStatus("Diagnóstico concluído.", "success", 2200);
+}
+
+async function runMigration() {
+  if (!confirm("Atualizar a estrutura técnica da planilha agora? O ID da planilha e a URL do app serão mantidos.")) return;
+  showStatus("Atualizando estrutura...", "loading", 9000);
+  const result = await apiRequest("migrate");
+  if (result.status !== "ok") return showStatus(result.message || "Migração falhou.", "error", 5200);
+  await syncData(true);
+  showTechnicalReport("Atualização da estrutura", {
+    mensagem: result.message,
+    alteracoes: result.changes || [],
+    diagnostico: result.diagnostics || {}
+  });
+  showStatus(result.message || "Estrutura atualizada.", "success", 3200);
+}
+
+function showTechnicalReport(title, data) {
+  const lines = [];
+  if (data) {
+    if (data.sheetId) lines.push(["Planilha", data.sheetId]);
+    if (data.appVersion || data.scriptVersion || data.sheetSchemaVersion) lines.push(["Versões", `App ${data.appVersion || "-"} · Script ${data.scriptVersion || "-"} · Planilha ${data.sheetSchemaVersion || "-"}`]);
+    if (data.migrationVersion) lines.push(["Migração", data.migrationVersion]);
+    if (typeof data.sheetsCount !== "undefined") lines.push(["Abas", data.sheetsCount]);
+    if (data.transactionCounts) lines.push(["Movimentos", `Receitas ${data.transactionCounts.receitas || 0} · Despesas ${data.transactionCounts.despesas || 0} · Cartão ${data.transactionCounts.gastosCartao || 0}`]);
+    if (data.missingIds) lines.push(["IDs pendentes", `Receitas ${data.missingIds.receitas || 0} · Despesas ${data.missingIds.despesas || 0} · Cartão ${data.missingIds.gastosCartao || 0}`]);
+    if (data.formulaErrors) lines.push(["Erros de fórmula", data.formulaErrors.total || 0]);
+    if (data.missingSheets && data.missingSheets.length) lines.push(["Abas ausentes", data.missingSheets.join(", ")]);
+    if (data.mensagem) lines.push(["Resultado", data.mensagem]);
+  }
+  const changes = data && data.alteracoes && data.alteracoes.length
+    ? `<div class="panel blue" style="box-shadow:none;margin-top:10px"><div class="panel-title">Alterações</div>${data.alteracoes.map(item => `<div class="meta">${esc(item)}</div>`).join("")}</div>`
+    : "";
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = `<div class="list">
+    ${lines.map(([key, value]) => `<div class="item"><div class="info"><div class="desc">${esc(key)}</div><div class="meta">${esc(value)}</div></div></div>`).join("") || empty("Sem detalhes retornados.")}
+  </div>${changes}`;
+  document.getElementById("modalLayer").classList.add("open");
+}
+
 function splitTextarea(id) {
   return document.getElementById(id).value.split(",").map(v => v.trim()).filter(Boolean);
 }
