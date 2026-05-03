@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FinControl">
 <meta name="theme-color" content="#111827">
-<title>FinControl v20.4</title>
+<title>FinControl v20.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +178,7 @@
   <div class="status" id="status"></div>
   <header class="topbar">
     <div>
-      <div class="eyebrow" id="versionLabel">FinControl v20.4</div>
+      <div class="eyebrow" id="versionLabel">FinControl v20.5</div>
       <div class="title" id="title">Dashboard</div>
     </div>
     <div class="actions">
@@ -206,17 +206,18 @@
   </section>
 </div>
 <script>
-const APP_VERSION = "20.4";
+const APP_VERSION = "20.5";
 const APP_BUILD_DATE = "2026-05-03";
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
-const APP_STORAGE_VERSION = "20.4";
+const APP_STORAGE_VERSION = "20.5";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
   appVersion: APP_VERSION,
   anoAtivo: new Date().getFullYear(),
   categoriasReceita: ["Salário","Freelance","Investimentos","Aluguel Recebido","Bônus","Outros"],
   categoriasDespesa: ["Moradia","Alimentação","Transporte","Saúde","Educação","Lazer","Vestuário","Assinaturas","Pet","Presentes","Outros"],
-  cartoesAtivos: ["Cartão 1","Cartão 2","Cartão 3"],
+  cartoesAtivos: [],
+  cartoesDetalhes: [],
   tokenInstalacao: ""
 };
 const titles = { dashboard:"Dashboard", historico:"Histórico", cartoes:"Cartões", mais:"Mais" };
@@ -258,7 +259,13 @@ const fmt = value => new Intl.NumberFormat("pt-BR", { style:"currency", currency
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[ch]));
-const moneyNumber = value => Number(String(value || "0").replace(/\./g, "").replace(",", ".")) || 0;
+function moneyNumber(value) {
+  const text = String(value ?? "0").trim();
+  if (!text) return 0;
+  if (text.includes(",") && text.includes(".")) return Number(text.replace(/\./g, "").replace(",", ".")) || 0;
+  if (text.includes(",")) return Number(text.replace(",", ".")) || 0;
+  return Number(text) || 0;
+}
 const monthFromDate = value => MESES[(new Date((value || today()) + "T12:00:00")).getMonth()];
 const yearFromDate = value => (new Date((value || today()) + "T12:00:00")).getFullYear();
 
@@ -581,7 +588,7 @@ function itemRow(item) {
 }
 
 function renderCartoes() {
-  const cards = state.config.cartoesAtivos || DEFAULT_CONFIG.cartoesAtivos;
+  const cards = cardNames();
   const monthIndex = MESES.indexOf(state.mes);
   return `
     <button class="primary violet" onclick="openEntry('cartao')" style="margin-bottom:12px">▣ Novo gasto no cartão</button>
@@ -609,6 +616,50 @@ function renderCartoes() {
 function normalizeCard(name) {
   return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
+function cardArg(name) {
+  return encodeURIComponent(String(name || ""));
+}
+function decodeCardArg(name) {
+  try { return decodeURIComponent(String(name || "")); } catch { return String(name || ""); }
+}
+function normalizeCardDetail(card) {
+  if (typeof card === "string") return { nome: card.trim(), limite: 0, fechamento: 0, vencimento: 0 };
+  return {
+    nome: String(card?.nome || card?.name || card?.cartao || "").trim(),
+    limite: Math.max(Number(card?.limite || card?.limit || 0), 0),
+    fechamento: normalizeDay(card?.fechamento || card?.diaFechamento || card?.closingDay),
+    vencimento: normalizeDay(card?.vencimento || card?.diaVencimento || card?.dueDay)
+  };
+}
+function normalizeDay(value) {
+  const day = Number(value) || 0;
+  return day >= 1 && day <= 31 ? Math.round(day) : 0;
+}
+function cardDetailsList() {
+  const details = Array.isArray(state.config.cartoesDetalhes) ? state.config.cartoesDetalhes : [];
+  const source = details.length ? details : (state.config.cartoesAtivos || []);
+  const seen = new Set();
+  return source
+    .map(normalizeCardDetail)
+    .filter(card => {
+      const key = normalizeCard(card.nome);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+function cardNames() {
+  return cardDetailsList().map(card => card.nome);
+}
+function findCardDetail(name) {
+  const wanted = normalizeCard(name);
+  return cardDetailsList().find(card => normalizeCard(card.nome) === wanted) || null;
+}
+function updateCardsConfig(details) {
+  const normalized = (details || []).map(normalizeCardDetail).filter(card => card.nome);
+  state.config.cartoesDetalhes = normalized;
+  state.config.cartoesAtivos = normalized.map(card => card.nome);
+}
 function daysUntilDue(day) {
   const now = new Date();
   const due = new Date(now.getFullYear(), now.getMonth(), day, 12);
@@ -616,19 +667,22 @@ function daysUntilDue(day) {
   return Math.max(0, Math.ceil((due - now) / 86400000));
 }
 function cardMetrics(name) {
-  const resumo = state.cartoesResumo.find(c => normalizeCard(c.nome) === normalizeCard(name)) || {};
-  const gastos = state.gastosCartao.filter(g => normalizeCard(g.cartao) === normalizeCard(name));
+  const detail = typeof name === "object" ? normalizeCardDetail(name) : (findCardDetail(name) || normalizeCardDetail(name));
+  const cardName = detail.nome;
+  const resumo = state.cartoesResumo.find(c => normalizeCard(c.nome) === normalizeCard(cardName)) || {};
+  const gastos = state.gastosCartao.filter(g => normalizeCard(g.cartao) === normalizeCard(cardName));
   const comprasMes = gastos.filter(g => monthFromDate(g.data) === state.mes).reduce((s, g) => s + Number(g.valor || 0), 0);
-  const limite = Number(resumo.limite || 0);
+  const limite = Number(resumo.limite || detail.limite || 0);
   const fatura = Number(resumo.faturaAtual || comprasMes);
   const disponivel = limite ? Number(resumo.disponivel || (limite - fatura)) : 0;
   const usado = limite ? Math.min(100, Math.round(fatura / limite * 100)) : 0;
-  const vencimento = Number(resumo.vencimento || 0);
+  const vencimento = Number(resumo.vencimento || detail.vencimento || 0);
+  const fechamento = Number(resumo.fechamento || detail.fechamento || 0);
   const dias = vencimento ? daysUntilDue(vencimento) : null;
-  return { resumo, gastos, limite, fatura, disponivel, usado, vencimento, dias };
+  return { resumo, detail, gastos, limite, fatura, disponivel, usado, vencimento, fechamento, dias };
 }
 function renderCartoesV2() {
-  const cards = state.config.cartoesAtivos || DEFAULT_CONFIG.cartoesAtivos;
+  const cards = cardDetailsList();
   if (!cards.length) {
     return `<div class="panel"><div class="panel-title">Cartões</div>${empty("Nenhum cartão ativo. Adicione em Mais > Config.")}<button class="primary violet" onclick="navigate('mais')">Configurar cartões</button></div>`;
   }
@@ -638,8 +692,9 @@ function renderCartoesV2() {
       <button class="secondary" onclick="navigate('mais')">Gerenciar cartões</button>
     </div>
     <div class="cards-grid">
-      ${cards.map(name => {
-        const m = cardMetrics(name);
+      ${cards.map(card => {
+        const m = cardMetrics(card);
+        const name = card.nome;
         const alert = m.dias !== null && m.dias <= 5 ? `<span class="chip active">Vence em ${m.dias} dia(s)</span>` : `<span>${m.gastos.length} compras</span>`;
         return `<div class="panel">
           <div class="panel-title"><span>${esc(name)}</span>${alert}</div>
@@ -654,7 +709,7 @@ function renderCartoesV2() {
             ${kpi("Disponível", m.limite ? fmt(m.disponivel) : "Sem limite", m.limite && m.disponivel < 0 ? "var(--red)" : "var(--green)")}
             ${kpi("Vencimento", m.vencimento ? `Dia ${m.vencimento}` : "-", "var(--blue)")}
           </div>
-          ${m.limite ? `<div class="bar"><span style="width:${m.usado}%;background:${m.usado > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta" style="margin-top:7px">${m.usado}% do limite usado · fechamento dia ${m.resumo.fechamento || "-"}</div>` : `<div class="meta">Limite, fechamento e vencimento vêm da aba do cartão no Sheets.</div>`}
+          ${m.limite ? `<div class="bar"><span style="width:${m.usado}%;background:${m.usado > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta" style="margin-top:7px">${m.usado}% do limite usado · fechamento dia ${m.fechamento || "-"}</div>` : `<div class="meta">Defina limite, fechamento e vencimento em Mais > Config.</div>`}
           ${m.gastos.length ? `<div class="list desktop-extra" style="margin-top:12px">${m.gastos.slice(0, 3).map(itemRow).join("")}</div>` : ""}
         </div>`;
       }).join("")}
@@ -665,13 +720,14 @@ function renderSetupChecklist() {
   const hasUrl = Boolean((state.settings.sheetUrl || "").trim());
   const hasYear = Boolean(Number(state.config.anoAtivo));
   const hasCategories = (state.config.categoriasReceita || []).length > 0 && (state.config.categoriasDespesa || []).length > 0;
-  const hasCards = (state.config.cartoesAtivos || []).length > 0;
+  const cards = cardDetailsList();
+  const hasCards = cards.length > 0;
   const hasData = allHistory().length > 0;
   const items = [
     { done: hasUrl, title: "Planilha conectada", text: hasUrl ? "URL do Apps Script configurada." : "Informe a URL do Apps Script para conectar." },
     { done: hasYear, title: "Ano de trabalho", text: hasYear ? `Ano ativo: ${state.config.anoAtivo}.` : "Defina o ano ativo." },
     { done: hasCategories, title: "Categorias prontas", text: hasCategories ? "Receitas e despesas têm categorias cadastradas." : "Cadastre categorias para organizar os lançamentos." },
-    { done: hasCards, title: "Cartões configurados", text: hasCards ? `${state.config.cartoesAtivos.length} cartão(ões) ativo(s).` : "Cadastre pelo menos um cartão se usar crédito." },
+    { done: hasCards, title: "Cartões configurados", text: hasCards ? `${cards.length} cartão(ões) ativo(s).` : "Cadastre pelo menos um cartão se usar crédito." },
     { done: hasData, title: "Pronto para usar", text: hasData ? "Já existem movimentos sincronizados." : "Lance a primeira receita ou despesa." }
   ];
   return `<div class="panel">
@@ -717,15 +773,29 @@ function renderConfig() {
         <div class="field"><label>Categorias de receita</label><textarea class="textarea" id="cfg-rec">${esc((state.config.categoriasReceita || []).join(", "))}</textarea></div>
         <div class="field"><label>Categorias de despesa</label><textarea class="textarea" id="cfg-desp">${esc((state.config.categoriasDespesa || []).join(", "))}</textarea></div>
         <div class="field">
-          <label>Cartões ativos</label>
+          <label>Cartões</label>
           <div class="card-manager">
-            ${(state.config.cartoesAtivos || []).map(card => `<div class="card-chip"><span>${esc(card)}</span><button title="Remover cartão" onclick="removeCardFromConfig('${esc(card)}')">×</button></div>`).join("")}
+            ${cardDetailsList().map(card => `<div class="card-chip">
+              <span>${esc(card.nome)} <small class="meta">· ${card.limite ? fmt(card.limite) : "sem limite"} · fecha ${card.fechamento || "-"} · vence ${card.vencimento || "-"}</small></span>
+              <span>
+                <button title="Editar cartão" style="color:var(--blue)" onclick="editCardFromConfig('${cardArg(card.nome)}')">Editar</button>
+                <button title="Remover cartão" onclick="removeCardFromConfig('${cardArg(card.nome)}')">×</button>
+              </span>
+            </div>`).join("") || `<div class="empty">Nenhum cartão cadastrado.</div>`}
           </div>
+          <input type="hidden" id="edit-card-original" value="">
           <div class="form-row">
             <input class="input" id="new-card-name" placeholder="Nome do cartão">
-            <button class="secondary" onclick="addCardFromConfig()">Adicionar</button>
+            <input class="input" id="new-card-limit" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Limite">
           </div>
-          <textarea class="textarea" id="cfg-cards" style="display:none">${esc((state.config.cartoesAtivos || []).join(", "))}</textarea>
+          <div class="form-row">
+            <input class="input" id="new-card-fechamento" type="number" min="1" max="31" placeholder="Fechamento">
+            <input class="input" id="new-card-vencimento" type="number" min="1" max="31" placeholder="Vencimento">
+          </div>
+          <div class="form-row">
+            <button class="secondary" onclick="addCardFromConfig()">Salvar cartão</button>
+            <button class="secondary" onclick="clearCardForm()">Novo</button>
+          </div>
         </div>
         <button class="primary" onclick="saveRemoteConfig()">Salvar e sincronizar</button>
       </div>
@@ -795,7 +865,13 @@ function entryForm(type, item = {}) {
   item = item || {};
   const catList = type === "receita" ? state.config.categoriasReceita : state.config.categoriasDespesa;
   const catOptions = (catList || []).map(cat => `<option ${cat === item.cat ? "selected" : ""}>${esc(cat)}</option>`).join("");
-  const cardOptions = (state.config.cartoesAtivos || []).map(card => `<option ${card === item.cartao ? "selected" : ""}>${esc(card)}</option>`).join("");
+  const cards = cardNames();
+  const cardOptions = cards.map(card => `<option ${card === item.cartao ? "selected" : ""}>${esc(card)}</option>`).join("");
+  if (type === "cartao" && !cards.length) return `
+    <div class="form">
+      ${empty("Cadastre um cartão antes de lançar gastos no crédito.")}
+      <button class="primary violet" onclick="closeModal();navigate('mais')">Configurar cartão</button>
+    </div>`;
   if (type === "cartao") return `
     <div class="form">
       <div class="field"><label>Cartão</label><select class="select" id="f-cartao">${cardOptions}</select></div>
@@ -850,22 +926,23 @@ async function saveEntry() {
   if (modalMode === "cartao") {
     data.cartao = document.getElementById("f-cartao").value;
     data.parcelas = Number(document.getElementById("f-parcelas").value) || 1;
-    upsertLocal("gastosCartao", data);
   } else {
     data.tipo = modalMode;
     data.mes = monthFromDate(data.data);
     data.ano = yearFromDate(data.data);
-    upsertLocal("lancamentos", data);
   }
-  persist();
-  closeModal();
-  renderContent();
+  showStatus("Salvando na planilha...", "loading", 7000);
   const result = await apiRequest(action, { type: modalMode === "cartao" ? "cartao" : "lancamento", data });
   if (result.status === "ok") {
+    if (result.id) data.id = result.id;
+    upsertLocal(modalMode === "cartao" ? "gastosCartao" : "lancamentos", data);
+    persist();
+    closeModal();
+    renderContent();
     showStatus("Salvo na planilha.", "success", 2200);
     setTimeout(() => syncData(true), 650);
   } else {
-    showStatus("Salvo localmente. Revise a sincronização.", "error", 3400);
+    showStatus(result.message || "Não foi salvo. Revise a sincronização.", "error", 4200);
   }
 }
 function upsertLocal(key, item) {
@@ -935,6 +1012,7 @@ async function syncData(silent = false) {
   document.getElementById("syncBtn").textContent = "⟳";
   if (json.status !== "ok") return showStatus(json.message || "Não foi possível sincronizar.", "error", 4200);
   state.config = { ...state.config, ...json.config };
+  updateCardsConfig(cardDetailsList());
   state.lancamentos = (json.lancamentos || []).map(normalizeItem);
   state.gastosCartao = (json.gastosCartao || []).map(normalizeItem);
   state.cartoesResumo = json.cartoesResumo || [];
@@ -970,37 +1048,65 @@ function captureConfigDraft() {
   const year = document.getElementById("cfg-year");
   const rec = document.getElementById("cfg-rec");
   const desp = document.getElementById("cfg-desp");
-  const cards = document.getElementById("cfg-cards");
   if (year) state.config.anoAtivo = Number(year.value) || state.config.anoAtivo;
   if (rec) state.config.categoriasReceita = splitTextarea("cfg-rec");
   if (desp) state.config.categoriasDespesa = splitTextarea("cfg-desp");
-  if (cards) state.config.cartoesAtivos = splitTextarea("cfg-cards");
+  updateCardsConfig(cardDetailsList());
 }
 function addCardFromConfig() {
   captureConfigDraft();
-  const input = document.getElementById("new-card-name");
-  const name = (input && input.value || "").trim();
+  const original = document.getElementById("edit-card-original")?.value || "";
+  const name = (document.getElementById("new-card-name")?.value || "").trim();
+  const limite = moneyNumber(document.getElementById("new-card-limit")?.value || "0");
+  const fechamento = normalizeDay(document.getElementById("new-card-fechamento")?.value);
+  const vencimento = normalizeDay(document.getElementById("new-card-vencimento")?.value);
   if (!name) return showStatus("Informe o nome do cartão.", "error", 2400);
-  const exists = (state.config.cartoesAtivos || []).some(card => normalizeCard(card) === normalizeCard(name));
-  if (exists) return showStatus("Cartão já está ativo.", "error", 2400);
-  state.config.cartoesAtivos = [...(state.config.cartoesAtivos || []), name];
+  if (!fechamento || !vencimento) return showStatus("Informe fechamento e vencimento entre 1 e 31.", "error", 2800);
+  const details = cardDetailsList();
+  const duplicate = details.some(card => normalizeCard(card.nome) === normalizeCard(name) && normalizeCard(card.nome) !== normalizeCard(original));
+  if (duplicate) return showStatus("Cartão já está cadastrado.", "error", 2400);
+  const next = details.filter(card => normalizeCard(card.nome) !== normalizeCard(original || name));
+  next.push({ nome: name, limite, fechamento, vencimento });
+  updateCardsConfig(next);
   persist();
   renderContent();
+  showStatus("Cartão salvo. Clique em Salvar e sincronizar para gravar na planilha.", "success", 2600);
 }
-function removeCardFromConfig(name) {
+function editCardFromConfig(encodedName) {
   captureConfigDraft();
+  const name = decodeCardArg(encodedName);
+  const card = findCardDetail(name);
+  if (!card) return;
+  document.getElementById("edit-card-original").value = card.nome;
+  document.getElementById("new-card-name").value = card.nome;
+  document.getElementById("new-card-limit").value = card.limite || "";
+  document.getElementById("new-card-fechamento").value = card.fechamento || "";
+  document.getElementById("new-card-vencimento").value = card.vencimento || "";
+}
+function clearCardForm() {
+  ["edit-card-original","new-card-name","new-card-limit","new-card-fechamento","new-card-vencimento"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+}
+function removeCardFromConfig(encodedName) {
+  captureConfigDraft();
+  const name = decodeCardArg(encodedName);
   if (!confirm(`Remover ${name} dos cartões ativos? Os lançamentos já gravados não serão apagados.`)) return;
-  state.config.cartoesAtivos = (state.config.cartoesAtivos || []).filter(card => normalizeCard(card) !== normalizeCard(name));
+  updateCardsConfig(cardDetailsList().filter(card => normalizeCard(card.nome) !== normalizeCard(name)));
   persist();
   renderContent();
 }
 async function saveRemoteConfig() {
   if (document.getElementById("cfg-url")) saveLocalSettings();
+  captureConfigDraft();
+  const cards = cardDetailsList();
   const config = {
     anoAtivo: Number(document.getElementById("cfg-year").value) || new Date().getFullYear(),
     categoriasReceita: splitTextarea("cfg-rec"),
     categoriasDespesa: splitTextarea("cfg-desp"),
-    cartoesAtivos: splitTextarea("cfg-cards"),
+    cartoesAtivos: cards.map(card => card.nome),
+    cartoesDetalhes: cards,
     tokenInstalacao: state.settings.token
   };
   state.config = { ...state.config, ...config };
