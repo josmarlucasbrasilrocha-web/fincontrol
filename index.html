@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FinControl">
 <meta name="theme-color" content="#111827">
-<title>FinControl v20.6</title>
+<title>FinControl v20.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +178,7 @@
   <div class="status" id="status"></div>
   <header class="topbar">
     <div>
-      <div class="eyebrow" id="versionLabel">FinControl v20.6</div>
+      <div class="eyebrow" id="versionLabel">FinControl v20.7</div>
       <div class="title" id="title">Dashboard</div>
     </div>
     <div class="actions">
@@ -206,10 +206,10 @@
   </section>
 </div>
 <script>
-const APP_VERSION = "20.6";
+const APP_VERSION = "20.7";
 const APP_BUILD_DATE = "2026-05-04";
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
-const APP_STORAGE_VERSION = "20.6";
+const APP_STORAGE_VERSION = "20.7";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
   appVersion: APP_VERSION,
@@ -482,7 +482,7 @@ function renderDashboardV2() {
   const recentes = allHistory().slice(0, 5);
   const cats = categoryBreakdown();
   const ano = Number(state.config.anoAtivo);
-  const lancAno = state.lancamentos.filter(item => yearFromDate(item.data) === ano);
+  const lancAno = state.lancamentos.filter(item => recordYear(item) === ano);
   const receitaAno = lancAno.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
   const despesaAno = lancAno.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
   const anoTotals = { receitas: receitaAno, despesas: despesaAno, saldo: receitaAno - despesaAno };
@@ -511,6 +511,7 @@ function renderDashboardV2() {
           </div>
           <div class="hero-note desktop-extra">${esc(compass.next)}</div>
         </section>
+        ${renderDashboardCardsSummary()}
         <div class="panel mobile-tight">
           <div class="panel-title"><span>Comprometimento</span><span>${pctReal}%</span></div>
           <div class="bar"><span style="width:${comprometido}%;background:${comprometido > 85 ? "var(--red)" : "var(--green)"}"></span></div>
@@ -688,6 +689,34 @@ function cardInvoiceForMonth(card) {
       return sum;
     }, 0);
 }
+function cardDashboardTotals() {
+  const cards = cardDetailsList().map(card => {
+    const metrics = cardMetrics(card);
+    return { ...metrics, nome: card.nome };
+  });
+  return {
+    cards,
+    limite: cards.reduce((sum, card) => sum + Number(card.limite || 0), 0),
+    utilizado: cards.reduce((sum, card) => sum + Number(card.limiteUtilizado || 0), 0),
+    disponivel: cards.reduce((sum, card) => sum + Number(card.disponivel || 0), 0),
+    faturaMes: cards.reduce((sum, card) => sum + Number(card.fatura || 0), 0)
+  };
+}
+function renderDashboardCardsSummary() {
+  const totals = cardDashboardTotals();
+  if (!totals.cards.length) return "";
+  const usadoPct = totals.limite ? Math.min(100, Math.round(totals.utilizado / totals.limite * 100)) : 0;
+  return `<div class="panel mobile-tight">
+    <div class="panel-title"><span>Cartões</span><span>${totals.cards.length} ativo(s)</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(94px,1fr));gap:8px">
+      <div><div class="label">Fatura ${esc(state.mes)}</div><div class="value" style="color:var(--violet)">${fmt(totals.faturaMes)}</div></div>
+      <div><div class="label">Usado</div><div class="value" style="color:var(--amber)">${fmt(totals.utilizado)}</div></div>
+      <div><div class="label">Disponível</div><div class="value" style="color:${totals.disponivel < 0 ? "var(--red)" : "var(--green)"}">${totals.limite ? fmt(totals.disponivel) : "-"}</div></div>
+    </div>
+    ${totals.limite ? `<div class="bar"><span style="width:${usadoPct}%;background:${usadoPct > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta">${usadoPct}% do limite total utilizado.</div>` : `<div class="meta" style="margin-top:8px">Defina limite nos cartões para acompanhar disponibilidade.</div>`}
+    ${totals.cards.slice(0, 3).map(card => `<div class="meta">${esc(card.nome)}: ${fmt(card.fatura)} em ${esc(state.mes)} · ${fmt(card.limiteUtilizado)} usado</div>`).join("")}
+  </div>`;
+}
 function cardLimitUsed(card) {
   const detail = typeof card === "object" ? normalizeCardDetail(card) : (findCardDetail(card) || normalizeCardDetail(card));
   return state.gastosCartao
@@ -706,7 +735,7 @@ function cardMetrics(name) {
   const resumo = state.cartoesResumo.find(c => normalizeCard(c.nome) === normalizeCard(cardName)) || {};
   const gastos = state.gastosCartao.filter(g => normalizeCard(g.cartao) === normalizeCard(cardName));
   const limite = Number(resumo.limite || detail.limite || 0);
-  const fatura = Number(resumo.faturaAtual || cardInvoiceForMonth(detail));
+  const fatura = cardInvoiceForMonth(detail);
   const limiteUtilizado = Number(resumo.limiteUtilizado || cardLimitUsed(detail));
   const disponivel = limite ? Number(resumo.disponivel || (limite - limiteUtilizado)) : 0;
   const usado = limite ? Math.min(100, Math.round(limiteUtilizado / limite * 100)) : 0;
