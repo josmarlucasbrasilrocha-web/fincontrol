@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FinControl">
 <meta name="theme-color" content="#111827">
-<title>FinControl v20.5</title>
+<title>FinControl v20.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -178,7 +178,7 @@
   <div class="status" id="status"></div>
   <header class="topbar">
     <div>
-      <div class="eyebrow" id="versionLabel">FinControl v20.5</div>
+      <div class="eyebrow" id="versionLabel">FinControl v20.6</div>
       <div class="title" id="title">Dashboard</div>
     </div>
     <div class="actions">
@@ -206,10 +206,10 @@
   </section>
 </div>
 <script>
-const APP_VERSION = "20.5";
-const APP_BUILD_DATE = "2026-05-03";
+const APP_VERSION = "20.6";
+const APP_BUILD_DATE = "2026-05-04";
 const DEFAULT_SHEET_URL = "https://script.google.com/macros/s/AKfycbynox1ikZHr_EGINHTzsQ67ErfcHokQCOd7xoWr9Sl0FhrWlZAif-Qv3dEsgJWQ_DoyiQ/exec";
-const APP_STORAGE_VERSION = "20.5";
+const APP_STORAGE_VERSION = "20.6";
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DEFAULT_CONFIG = {
   appVersion: APP_VERSION,
@@ -314,7 +314,7 @@ function renderContent() {
 }
 
 function lancMes(mes = state.mes) {
-  return state.lancamentos.filter(item => item.mes === mes && yearFromDate(item.data) === Number(state.config.anoAtivo));
+  return state.lancamentos.filter(item => item.mes === mes && recordYear(item) === Number(state.config.anoAtivo));
 }
 function totalsForMonth(mes = state.mes) {
   const list = lancMes(mes);
@@ -323,10 +323,16 @@ function totalsForMonth(mes = state.mes) {
   return { receitas, despesas, saldo: receitas - despesas };
 }
 function totalsForMonths(months, ano = Number(state.config.anoAtivo)) {
-  const list = state.lancamentos.filter(item => months.includes(item.mes) && yearFromDate(item.data) === ano);
+  const list = state.lancamentos.filter(item => months.includes(item.mes) && recordYear(item) === ano);
   const receitas = list.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
   const despesas = list.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
   return { receitas, despesas, saldo: receitas - despesas };
+}
+function recordYear(item) {
+  return Number(item && item.ano) || yearFromDate(item && item.data);
+}
+function isCardInstallment(item) {
+  return item && item.tipo === "despesa" && /^car-/.test(String(item.id || "")) && /-p\d{2}$/.test(String(item.id || ""));
 }
 function monthsForCurrentSemester() {
   const idx = MESES.indexOf(state.mes);
@@ -419,7 +425,7 @@ function renderDashboard() {
   const recentes = allHistory().slice(0, 5);
   const cats = categoryBreakdown();
   const ano = Number(state.config.anoAtivo);
-  const lancAno = state.lancamentos.filter(item => yearFromDate(item.data) === ano);
+  const lancAno = state.lancamentos.filter(item => recordYear(item) === ano);
   const receitaAno = lancAno.filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor || 0), 0);
   const despesaAno = lancAno.filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor || 0), 0);
   const anoTotals = { receitas: receitaAno, despesas: despesaAno, saldo: receitaAno - despesaAno };
@@ -505,10 +511,6 @@ function renderDashboardV2() {
           </div>
           <div class="hero-note desktop-extra">${esc(compass.next)}</div>
         </section>
-        <div class="quick mobile-tight">
-          <button class="green" onclick="openEntry('receita')">↑ Receita</button>
-          <button class="red" onclick="openEntry('despesa')">↓ Despesa</button>
-        </div>
         <div class="panel mobile-tight">
           <div class="panel-title"><span>Comprometimento</span><span>${pctReal}%</span></div>
           <div class="bar"><span style="width:${comprometido}%;background:${comprometido > 85 ? "var(--red)" : "var(--green)"}"></span></div>
@@ -553,7 +555,7 @@ function renderHistorico() {
     ${items.length ? `<div class="list">${items.map(itemRow).join("")}</div>` : empty("Nada encontrado para o filtro atual.")}`;
 }
 function allHistory() {
-  const lanc = state.lancamentos.map(item => ({ ...item, kind:"lancamento" }));
+  const lanc = state.lancamentos.filter(item => !isCardInstallment(item)).map(item => ({ ...item, kind:"lancamento" }));
   const cards = state.gastosCartao.map(item => ({ ...item, kind:"cartao", tipo:"cartao" }));
   return [...lanc, ...cards].sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
 }
@@ -660,6 +662,38 @@ function updateCardsConfig(details) {
   state.config.cartoesDetalhes = normalized;
   state.config.cartoesAtivos = normalized.map(card => card.nome);
 }
+function cardInvoiceForMonth(card) {
+  const detail = typeof card === "object" ? normalizeCardDetail(card) : (findCardDetail(card) || normalizeCardDetail(card));
+  const targetMonth = MESES.indexOf(state.mes);
+  const targetYear = Number(state.config.anoAtivo);
+  return state.gastosCartao
+    .filter(item => normalizeCard(item.cartao) === normalizeCard(detail.nome))
+    .reduce((sum, item) => {
+      const purchase = new Date(String(item.data || today()) + "T12:00:00");
+      if (isNaN(purchase.getTime())) return sum;
+      const parcelas = Math.max(Number(item.parcelas) || 1, 1);
+      const fechamento = detail.fechamento || 0;
+      let firstMonth = purchase.getMonth();
+      let firstYear = purchase.getFullYear();
+      if (fechamento > 0 && purchase.getDate() > fechamento) {
+        firstMonth = (firstMonth + 1) % 12;
+        if (firstMonth === 0) firstYear++;
+      }
+      const value = Number(item.valor || 0) / parcelas;
+      for (let p = 0; p < parcelas; p++) {
+        const month = (firstMonth + p) % 12;
+        const year = firstYear + Math.floor((firstMonth + p) / 12);
+        if (month === targetMonth && year === targetYear) return sum + value;
+      }
+      return sum;
+    }, 0);
+}
+function cardLimitUsed(card) {
+  const detail = typeof card === "object" ? normalizeCardDetail(card) : (findCardDetail(card) || normalizeCardDetail(card));
+  return state.gastosCartao
+    .filter(item => normalizeCard(item.cartao) === normalizeCard(detail.nome))
+    .reduce((sum, item) => sum + Number(item.valor || 0), 0);
+}
 function daysUntilDue(day) {
   const now = new Date();
   const due = new Date(now.getFullYear(), now.getMonth(), day, 12);
@@ -671,15 +705,15 @@ function cardMetrics(name) {
   const cardName = detail.nome;
   const resumo = state.cartoesResumo.find(c => normalizeCard(c.nome) === normalizeCard(cardName)) || {};
   const gastos = state.gastosCartao.filter(g => normalizeCard(g.cartao) === normalizeCard(cardName));
-  const comprasMes = gastos.filter(g => monthFromDate(g.data) === state.mes).reduce((s, g) => s + Number(g.valor || 0), 0);
   const limite = Number(resumo.limite || detail.limite || 0);
-  const fatura = Number(resumo.faturaAtual || comprasMes);
-  const disponivel = limite ? Number(resumo.disponivel || (limite - fatura)) : 0;
-  const usado = limite ? Math.min(100, Math.round(fatura / limite * 100)) : 0;
+  const fatura = Number(resumo.faturaAtual || cardInvoiceForMonth(detail));
+  const limiteUtilizado = Number(resumo.limiteUtilizado || cardLimitUsed(detail));
+  const disponivel = limite ? Number(resumo.disponivel || (limite - limiteUtilizado)) : 0;
+  const usado = limite ? Math.min(100, Math.round(limiteUtilizado / limite * 100)) : 0;
   const vencimento = Number(resumo.vencimento || detail.vencimento || 0);
   const fechamento = Number(resumo.fechamento || detail.fechamento || 0);
   const dias = vencimento ? daysUntilDue(vencimento) : null;
-  return { resumo, detail, gastos, limite, fatura, disponivel, usado, vencimento, fechamento, dias };
+  return { resumo, detail, gastos, limite, limiteUtilizado, fatura, disponivel, usado, vencimento, fechamento, dias };
 }
 function renderCartoesV2() {
   const cards = cardDetailsList();
@@ -709,7 +743,7 @@ function renderCartoesV2() {
             ${kpi("Disponível", m.limite ? fmt(m.disponivel) : "Sem limite", m.limite && m.disponivel < 0 ? "var(--red)" : "var(--green)")}
             ${kpi("Vencimento", m.vencimento ? `Dia ${m.vencimento}` : "-", "var(--blue)")}
           </div>
-          ${m.limite ? `<div class="bar"><span style="width:${m.usado}%;background:${m.usado > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta" style="margin-top:7px">${m.usado}% do limite usado · fechamento dia ${m.fechamento || "-"}</div>` : `<div class="meta">Defina limite, fechamento e vencimento em Mais > Config.</div>`}
+          ${m.limite ? `<div class="bar"><span style="width:${m.usado}%;background:${m.usado > 85 ? "var(--red)" : "var(--violet)"}"></span></div><div class="meta" style="margin-top:7px">${fmt(m.limiteUtilizado)} usado · ${m.usado}% do limite · fechamento dia ${m.fechamento || "-"}</div>` : `<div class="meta">Defina limite, fechamento e vencimento em Mais > Config.</div>`}
           ${m.gastos.length ? `<div class="list desktop-extra" style="margin-top:12px">${m.gastos.slice(0, 3).map(itemRow).join("")}</div>` : ""}
         </div>`;
       }).join("")}
@@ -914,8 +948,9 @@ function closeModalOutside(event) {
   if (event.target.id === "modalLayer") closeModal();
 }
 async function saveEntry() {
+  const typeToSave = modalMode;
   const data = {
-    id: editing?.id || uid(modalMode === "cartao" ? "car" : "lan"),
+    id: editing?.id || uid(typeToSave === "cartao" ? "car" : "lan"),
     desc: document.getElementById("f-desc").value.trim(),
     cat: document.getElementById("f-cat").value,
     valor: moneyNumber(document.getElementById("f-valor").value),
@@ -923,21 +958,22 @@ async function saveEntry() {
   };
   if (!data.desc || !data.valor) return showStatus("Preencha descrição e valor.", "error");
   const action = editing ? "update" : "insert";
-  if (modalMode === "cartao") {
+  if (typeToSave === "cartao") {
     data.cartao = document.getElementById("f-cartao").value;
     data.parcelas = Number(document.getElementById("f-parcelas").value) || 1;
   } else {
-    data.tipo = modalMode;
+    data.tipo = typeToSave;
     data.mes = monthFromDate(data.data);
     data.ano = yearFromDate(data.data);
   }
   showStatus("Salvando na planilha...", "loading", 7000);
-  const result = await apiRequest(action, { type: modalMode === "cartao" ? "cartao" : "lancamento", data });
+  closeModal();
+  renderContent();
+  const result = await apiRequest(action, { type: typeToSave === "cartao" ? "cartao" : "lancamento", data });
   if (result.status === "ok") {
     if (result.id) data.id = result.id;
-    upsertLocal(modalMode === "cartao" ? "gastosCartao" : "lancamentos", data);
+    upsertLocal(typeToSave === "cartao" ? "gastosCartao" : "lancamentos", data);
     persist();
-    closeModal();
     renderContent();
     showStatus("Salvo na planilha.", "success", 2200);
     setTimeout(() => syncData(true), 650);
